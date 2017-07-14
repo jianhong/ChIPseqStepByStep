@@ -1,0 +1,49 @@
+Package: ChIPseqStepByStep
+Type: Package
+Title: Integrated analysis and visualization of ChIP-seq data using ChIPpeakAnno, GeneNetworkBuilder and TrackViewer
+Version: 0.99.0
+Author: Jianhong Ou, Jun Yu, Lihua Julie Zhu
+Maintainer: Jianhong Ou <jianhong.ou@gmail.com>
+Description: Chromatin immuno-precipitation followed by DNA sequencing (ChIP-seq) 
+    has become the most prevalent high throughput technology for the genome-wide 
+    identification of the binding sites of transcription factors and histone 
+    modification. In this workshop, attendants will gain knowledge and hands-on 
+    experiences on analyzing ChIP-seq dataset using several Bioconductor 
+    packages such as ChIPpeakAnno, GeneNetorkBuilder and TrackViewer.
+Depends:
+    R (>= 3.4)
+Imports:
+    ChIPpeakAnno,
+    trackViewer,
+    GeneNetworkBuilder,
+    motifStack
+Suggests:
+    SRAdb,
+    reshape2,
+    Rsubread,
+    Rsamtools,
+    rtracklayer,
+    GenomicAlignments,
+    idr,
+    ChIPQC,
+    csaw,
+    ggplot2,
+    TxDb.Hsapiens.UCSC.hg19.knownGene,
+    org.Hs.eg.db,
+    reactome.db,
+    BSgenome.Hsapiens.UCSC.hg19,
+    knitr,
+    trackViewer,
+    png,
+    grid,
+    limma,
+    simpIntLists,
+    plotly,
+    Rgraphviz,
+    revealjs,
+    GEOquery
+License: GPL (>= 2)
+LazyData: TRUE
+VignetteBuilder: knitr
+RoxygenNote: 6.0.1
+biocViews: Sequencing, ChIPseq, GeneRegulation, QualityControl

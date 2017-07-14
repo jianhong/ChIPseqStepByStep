@@ -1,0 +1,920 @@
+---
+title: "Integrated analysis and visualization of ChIP-seq data using _ChIPpeakAnno_, _GeneNetworkBuilder_ and _TrackViewer_"
+author: "Jianhong Ou, Jun Yu, Lihua Julie Zhu"
+bibliography: bibliography.bib
+csl: cell.csl
+vignette: >
+  %\VignetteIndexEntry{Integrated analysis and visualization of ChIP-seq data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+  BiocStyle::html_document
+---
+
+<style>
+#introduction p img {
+    max-height: 600px;
+}
+</style>
+
+```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
+suppressPackageStartupMessages({
+    library(SRAdb)
+    library(reshape2)
+    library(Rsubread)
+    library(Rsamtools)
+    library(ChIPpeakAnno)
+    library(GeneNetworkBuilder)
+    library(rtracklayer)
+    library(GenomicAlignments)
+    library(idr)
+    library(ChIPQC)
+    library(csaw)
+    library(ggplot2)
+    library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+    library(org.Hs.eg.db)
+    library(reactome.db)
+    library(BSgenome.Hsapiens.UCSC.hg19)
+    library(motifStack)
+    library(knitr)
+    library(trackViewer)
+    library(png)
+    library(grid)
+})
+opts_chunk$set(eval=FALSE, fig.width=6, fig.height=6)
+```
+
+
+```{r eval=TRUE}
+extdata <- system.file("extdata", package = "ChIPseqStepByStep")
+load(file.path(extdata, "minimal.rds"))
+```
+
+
+# ABSTRACT
+
+Chromatin immunoprecipitation (ChIP) followed by DNA sequencing (ChIP-seq) has become prevalent high throughput technologies for identifying the binding sites of DNA-binding proteins genome-wise. A number of tools have been devlelopped to facilitate the identification and annotation of the binding sites of the DNA-binding proteins of interest. However, too much selection make it difficult for novel hand. The workflow is based primarily on R packages from the open-source Bioconductor project and covers all steps of the analysis pipline. Analyses will be demonstrated on a published ChIP-seq data set. This will provide readers with practical usage examples that can be applied in their own studies.
+
+**Keywords:**  ChIP-seq, annotation
+
+
+**Availability**: The packages are freely available at [http://www.bioconductor.org](https://www.bioconductor.org/).
+
+**Contact**: julie.zhu@umassmed.edu 
+
+# 1 INTRODUCTION
+
+Chromatin immunoprecipitation followed by DNA sequencing (ChIP-seq) is a popular technique for identifying the genomic binding sites of a target protein[@park2009chip]. Conventional analysis of ChIP-seq data including detecting absolute binding based duplicated test and the relative changes in the binding profile between conditions or transcription factors (TFs). In this kind of analysis, the analysis could be divided into 4 parts:
+
+- mapping reads
+
+- call peaks for each samples
+
+- compare the peaks for different conditions or TFs.
+
+- annotations
+
+This article describes a computational workflow for performing a ChIP-seq analysis. The aim is to facilitate the practical implementation of **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)**[@zhu2010chippeakanno] by providing detailed code and expected output. The workflow described here applies to any ChIP-seq experiment with multiple experimental conditions and with multiple biological samples within one or more of the conditions. 
+
+![workflow](figure/workflow.png)
+
+Figure 1. flow chart of ChIP-seq analysis.
+
+The workflow is based primarily on software packages from the open-source [Bioconductor project](http://bioconductor.org/)[@gentleman2004bioconductor]. It contains all steps that are necessary for detecting peaks, starting from the raw read sequences. Reads are first aligned to the genome using the **[Rsubread](http://bioconductor.org/packages/release/bioc/html/Rsubread.html)**[@liao2013subread] package. Peaks are called by **[MACS2](https://github.com/taoliu/MACS/)**[@zhang2008model]. The **IDR** (Irreproducible Discovery Rate) framework[@li2011measuring] was used to assess the consistency of replicate experiments and to obtain a high-confidence single set of peak calls for each transcription factor. The peaks were annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** and **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** packages.
+
+The application of the methods in this article will be demonstrated on a publicly available ChIP-seq data sets. The data set studies genome-wide association between YAP/TAZ/TEAD peaks at enhancers drives oncogenic growth[@zanconato2015genome]. The intention is to provide readers with a full usage example from which they can construct analysis of their own data.
+
+# 2 Downloading data from Gene Expression Omnibus (GEO)
+The first task is to download the relevant ChIP-seq libraries from the NCBI GEO. These are obtained from the data series GSE66081 and GSE49651. GSE66081 saves the data of ChIP-seq raw reads for the study of association between YAP/TAZ/TEAD and AP-1 at enhancers drivers oncogenic trowth. And GSE66081 is saved as SRA project SRP055170[@zanconato2015genome]. GSE49651 saves the H3K27Ac, H3K4me1, H3K4me3 ChIP-seq data in breast cancer cell line[@rhie2014nucleosome]. The experiment contains two biological replicates in total for each of the TFs. Here we use **[SRAdb](http://bioconductor.org/packages/release/bioc/html/SRAdb.html)**[@zhu2013sradb] package to download data.
+
+```{r}
+## load library SRAdb to retrieve SRA files for GSE66081 dataset
+library(SRAdb)
+## SRAdb need to download a light sqlite file 
+## to extract sra file information
+## and then download by getSRAfile function.
+sqlfile <- "SRAmetadb.sqlite"
+if(!file.exists(sqlfile)) 
+    sqlfile <- getSRAdbFile()
+sra_con <- dbConnect(SQLite(), sqlfile)
+conversion <- sraConvert(c("SRP055170"), sra_con=sra_con)
+out <- getSRAfile(conversion$sample, 
+                  sra_con=sra_con, 
+                  fileType="sra")
+
+## ectract file annotations
+rs <- listSRAfile(conversion$sample, 
+                  sra_con=sra_con, 
+                  fileType="sra")
+experiment <- dbGetQuery(sra_con, 
+                         paste0("select * from experiment where",
+                                " experiment_accession in ('",
+                                paste(conversion$experiment, 
+                                      collapse="','"), "')"))
+info <- merge(experiment[, c("experiment_accession", "title", "library_layout")], 
+              rs[, c("experiment", "run")], by=1)
+```
+```{r eval=TRUE}
+info[, 2:3]
+```
+
+These files are downloaded in the SRA format, and need to be unpacked to the FASTQ format prior to alignment. This can be done using the _fastq-dump_ utility from **[SRA Toolkit](http://www.ncbi.nlm.nih.gov/books/NBK158900/)**[@leinonen2010sequence].
+
+```{r}
+runs <- info[, "run"]
+## extract fastq files from sra by sratoolkit
+sapply(paste0(runs, ".sra"), 
+       function(.ele) system(paste("fastq-dump", .ele)))
+```
+
+Technical replicates are merged together prior to further processing. This reflects the fact that they originate from a single library of DNA fragments.
+
+```{r}
+grp <- do.call(rbind, strsplit(info$title, "(;|:) "))
+info <- cbind(info, grp)
+runs <- split(runs, grp[, 2])
+group <- gsub("_ChIPSeq", "", names(runs))
+mapply(function(.ele, n) 
+    system(paste("cat", paste0(.ele, ".fastq", collapse=" "), 
+                 ">>", paste0(n, ".fastq"), collapse=" ")), 
+       runs, group)
+rm(paste0(info$run, ".fastq"))
+```
+
+# 3 Aligning reads to hg19 build of human genome
+
+Reads in each library are aligned to the hg19 build of human genome, using the **[Rsubread](http://bioconductor.org/packages/release/bioc/html/Rsubread.html)** package. An index is constructed with the prefix index/hg19 and the index can be re-used. Here, the `type` of sequencing data is set to 1 for genomic DNA-seq data. The uniquely mapped reads should be reported only by setting the `uniqe` to TRUE.
+
+```{r}
+library(Rsubread)
+fastq.files <- paste0(group, ".fastq")
+bam.files <- paste0(group, ".bam")
+
+##getPhredOffset, if the offset is not correct, it will report error.
+x <- qualityScores(filename=fastq.files[1], 
+                   input_format="FASTQ", offset=33)
+```
+```{r eval=TRUE}
+x[1:5, 1:10]
+```
+```{r}
+## build index and this can be re-used.
+hg19.fasta <- 
+    "Genomes/UCSC/hg19/Sequence/WholeGenomeFasta/genome.fa"
+dir.create("index")
+buildindex(basename="index/hg19",
+           reference=hg19.fasta)
+
+## alignment
+align(index="./index/hg19", readfile1=fastq.files, type=1, 
+      output_file=bam.files, maxMismatches=2, nthreads=2, 
+      phredOffset=33, unique=TRUE)
+```
+Potential PCR duplicates are removed by _removeDupReads_ function in **[Rsubread](http://bioconductor.org/packages/release/bioc/html/Rsubread.html)** package. This step can be also done by _MarkDuplicates_ tool from the [Picard software suite](http://broadinstitute.github.io/picard/). By _asBam_ function from **[Rsamtools](http://bioconductor.org/packages/release/bioc/html/Rsamtools.html)** package, the alignment is sorted by their mapping location, and an index created on the destination (with extension '.bai') when `indexDestination=TRUE`.
+
+```{r}
+## remove reads which are mapped to identical locations, 
+## using mapping location of the first base of each read.
+## and resort by postion
+library(Rsamtools)
+null <- sapply(group, function(gp){
+    out <- asSam(paste0(gp, ".bam"), "tmp")
+    removeDupReads(out, threshold=2, outputFile="tmp.rmdup.sam")
+    asBam("tmp.rmdup.sam", paste0(gp, "rmdup.bam"), indexDestination=TRUE)
+    unlink(out)
+    unlink("tmp.rmdup.sam")
+})
+```
+
+# 4 Calling peaks
+
+The control datasets are pooled before calling peaks according the description of paper. 
+
+```{r}
+## pool IgG depend on experiment
+IgG.bg <- list(rep1.2=c("IgG_rep1.rmdup.bam", "IgG_rep2.rmdup.bam", 
+                        "IgG_rep1.2.rmdup.bam"),
+                rep3.4=c("IgG_rep3.rmdup.bam", "IgG_rep4.rmdup.bam", 
+                         "IgG_rep3.4.rmdup.bam"),
+                rep3.5=c("IgG_rep3.rmdup.bam", "IgG_rep5.rmdup.bam", 
+                         "IgG_rep3.5.rmdup.bam"))
+null <- sapply(IgG.bg, function(.ele){
+    out <- mergeBam(files=.ele[-3], destination = .ele[3], 
+                    indexDestination=TRUE)
+})
+```
+
+Before we call peaks, we may want to check the difference between ChIP signal and background signal.
+By `ChIPpeakAnno::cumulativePercentage` function, the difference between the cumulative percentage 
+tag allocation in Input and IP could be clearly checked[@diaz2012normalization,@ramirez2016deeptools2].
+
+```{r}
+library(ChIPpeakAnno)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+pair <- data.frame(treat=c("YAP", "TAZ", "TEAD4", "JUN"), 
+                   control=c("1.2", "1.2", "3.4", "3.5"))
+# use chromosome 1 to save the time.
+chr1 <- as(seqinfo(TxDb.Hsapiens.UCSC.hg19.knownGene)["chr1"], "GRanges")
+cPout <- list()
+for(i in seq.int(nrow(pair))){
+    cPout[[i]] <- cumulativePercentage(
+        bamfiles = c(paste0(pair[i, "treat"], "_rep1.rmdup.bam"),
+                     paste0(pair[i, "treat"], "_rep2.rmdup.bam"),
+                     paste0("IgG_rep", pair[i, "control"], ".rmdup.bam")), 
+        gr=chr1)
+    }
+```
+
+
+The **[MACS2](https://github.com/taoliu/MACS/)** is used for peak calling. In this step, multiple tools can be used, for example [BroadPeak](http://jordan.biology.gatech.edu/page/software/broadpeak/)[@wang2013broadpeak], [CCAT](http://cmb.gis.a-star.edu.sg/ChIPSeq/paperCCAT.htm)[@xu2010signal], [CisGenome](http://www.biostat.jhsph.edu/~hji/cisgenome/)[@ji2008integrated], [Dfilter](http://collaborations.gis.a-star.edu.sg/~cmb6/kumarv1/dfilter/)[@kumar2013uniform], [dpeak](http://www.stat.wisc.edu/~chungdon/dpeak/)[@chung2013dpeak], [EDD](https://github.com/CollasLab/edd)[@lund2014enriched], [ERANGE](http://woldlab.caltech.edu/rnaseq)[@mortazavi2008mapping], [FindPeaks](http://vancouvershortr.sourceforge.net/)[@fejes2008findpeaks], [F-Seq](http://fureylab.web.unc.edu/software/fseq/)[@boyle2008f], [GEM](https://github.com/gifford-lab/GEM)[@guo2012high], [Homer](http://homer.salk.edu/homer/)[@heinz2010simple], [Hotspot](http://www.uwencode.org/proj/hotspot/)[@john2011chromatin], [Hpeak](http://csg.sph.umich.edu//qin/HPeak/)[@qin2010hpeak], [PeakRanger](http://ranger.sourceforge.net/)[@feng2011peakranger], [PeakSeq](http://info.gersteinlab.org/PeakSeq)[@rozowsky2009peakseq], [QuEST](http://www-hsc.usc.edu/~valouev/QuEST/QuEST.html)[@valouev2008genome], [RSEG](http://smithlabresearch.org/software/rseg/)[@song2011identifying], [SICER](http://home.gwu.edu/~wpeng/Software.htm)[@zang2009clustering],  [SISSRs](http://sissrs.rajajothi.com/)[@narlikar2012chip], [ZINBA](https://code.google.com/p/zinba/)[@rashid2011zinba], or R/Bioconductor tools [BayesPeak](http://bioconductor.org/packages/release/bioc/html/BayesPeak.html)[@spyrou2009bayespeak], [CSAR](https://www.bioconductor.org/packages/release/bioc/html/CSAR.html)[@muino2011chip], [csaw](http://bioconductor.org/packages/release/bioc/html/csaw.html)[@lun2014novo],  [DiffBind](http://bioconductor.org/packages/release/bioc/html/DiffBind.html)[@ross2012differential], [SPP](http://compbio.med.harvard.edu/Supplements/ChIP-seq/)[@kharchenko2008design]. However, too much choices make it difficult for users to determine which one should be used. According google scholar, **[MACS2](https://github.com/taoliu/MACS/)** and **[Homer](http://homer.salk.edu/homer/)** have the highest citation rate for sharp peaks calling and **[SICER](http://home.gwu.edu/~wpeng/Software.htm)** and **[CCAT](http://cmb.gis.a-star.edu.sg/ChIPSeq/paperCCAT.htm)** have the highest citation rate for broad peaks calling and **[ZINBA](https://code.google.com/p/zinba/)** has the highest citation rate for mixing peaks calling. 
+
+```{r}
+for(i in seq.int(nrow(pair))){
+    system(paste("macs2 callpeak --to-large -t", 
+                 paste0(pair[i, "treat"], "_rep1.rmdup.bam"), 
+                 "-c ", paste0("IgG_rep", pair[i, "control"], ".rmdup.bam"), 
+                 " -f BAM -g hs -q 0.1 -n", 
+                 paste0(pair[i, "treat"], "_rep1.q1")))
+    system(paste("macs2 callpeak --to-large -t", 
+                 paste0(pair[i, "treat"], "_rep2.rmdup.bam"), 
+                 "-c ", paste0("IgG_rep", pair[i, "control"], ".rmdup.bam"), 
+                 " -f BAM -g hs -q 0.1 -n", 
+                 paste0(pair[i, "treat"], "_rep2.q1")))
+    ## we will use idr to filter the results later
+}
+```
+
+We set loose filter condition for [MACS2](https://github.com/taoliu/MACS/) to get more peaks for irreproducibility discovery rate (IDR) analysis. After peak calling, the output of [MACS2](https://github.com/taoliu/MACS/) will be import into R by `ChIPpeakAnno::toGRanges` function. The top 10000 peaks sorted by pValue (FDR) will be used for IDR analysis. 
+
+```{r}
+library(ChIPpeakAnno)
+macs2.files <- dir(".", pattern="*.q1_peaks.narrowPeak$")
+peaks <- sapply(macs2.files, function(.ele) 
+    toGRanges(.ele, format="narrowPeak"))
+peaks.bk <- peaks
+peaks <- lapply(peaks, function(.ele) 
+    .ele[order(.ele$pValue, decreasing=TRUE)])
+```
+
+There are lots of noise peaks when we set loose filter condition for [MACS2](https://github.com/taoliu/MACS/). We will use IDR framework to filter the low reproducible peaks. To filter the peak only overlapping peaks will be used for IDR calculation.
+
+```{r}
+peaks <- lapply(peaks, function(.ele) .ele[1:min(1e5, length(.ele))])
+```
+```{r eval=TRUE}
+lengths(peaks)
+```
+
+```{r}
+group <- gsub("^(.*?)_.*$", "\\1", names(peaks))
+peaks.grp <- split(peaks, group)
+## find overlapping peaks
+GSE66081 <- sapply(peaks.grp, findOverlapsOfPeaks, simplify = FALSE)
+GSE66081.bk <- GSE66081
+GSE66081 <- sapply(GSE66081, function(.ele)
+    .ele$peaklist[[names(.ele$peaklist)[grepl("\\/\\/\\/", 
+                                        names(.ele$peaklist))]]],
+                   simplify=FALSE)
+```
+```{r eval=TRUE}
+lengths(GSE66081)
+```
+
+The IDR are calculated by the average coverages of each overlapping peak. The reads counts for peaks are done by _summarizeOverlaps_ function in **[GenomicAlignments](https://www.bioconductor.org/packages/release/bioc/html/GenomicAlignments.html)**[@lawrence2013software] package.
+
+```{r}
+library(ChIPpeakAnno)
+new.group.names <- 
+    lapply(GSE66081.bk, 
+           function(.ele) 
+               sub(".q1_peaks.narrowPeak", ".bam", 
+                   names(.ele$peaklist)[!grepl("\\/\\/\\/", 
+                                               names(.ele$peaklist))]))
+GSE66081 <- mapply(function(.peaks, .bamfiles) 
+    IDRfilter(peaksA=.peaks[[1]], peaksB=.peaks[[2]],
+              bamfileA=.bamfiles[1], bamfileB=.bamfiles[2],
+              IDRcutoff=0.01),
+    peaks.grp, new.group.names)
+## The original peaks are filtered to decrease the memory usage.
+peaks.keep <- sapply(GSE66081, function(.ele) 
+    as.character(unlist(.ele$peakNames)))
+peaks.keep <- lapply(peaks.keep, function(.ele) 
+    gsub("^.*__", "", .ele))
+lengths(peaks.keep)
+peaks.keep <- unlist(peaks.keep)
+peaks.s <- lapply(peaks, function(.ele) 
+    .ele[names(.ele) %in% peaks.keep])
+lengths(peaks.s)
+peaks.unlist <- unlist(GRangesList(peaks.s), use.names = FALSE)
+```
+
+Export the filtered peak by _export_ function in **[rtracklayer](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html)**[@lawrence2009rtracklayer] package. 
+
+```{r}
+library(rtracklayer)
+null <- mapply(function(.dat, .name) 
+    export(.dat, gsub("^(.*?).q1.*$", "\\1.fil.bed", .name),
+           format="BED"), 
+    peaks.s, names(peaks.s))
+## filter the peaks by qValue < 10^-10 to get similar number peaks 
+## as filtered by idr to confirm the effect of IDR filter.
+peaks.bk <- lapply(peaks.bk, function(.ele) .ele[.ele$qValue>10])
+null <- mapply(function(.dat, .name) 
+    export(.dat, gsub("^(.*?).q1.*$", "\\1.fil.q01.bed", .name),
+           format="BED"), 
+    peaks.bk, names(peaks.bk))
+```
+
+# 5 Quality control
+
+After that the quality of the ChiP-seq experiment could be checked by ChIPQC package. Usally, before mapping, [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) could be used for sequence quality accessment. And after mapping, [SAMStat](http://samstat.sourceforge.net/)[@lassmann2011samstat] could be used for mapping quality analysis, and strand cross-correlation could be sued for checking the experiment quality via [csaw](http://bioconductor.org/packages/release/bioc/html/csaw.html) package. Here, we focus on the peak calling quality analysis.
+
+```{r}
+## QC
+library(csaw)
+scc <- lapply(gsub("^(.*?).q1.*$", "\\1.rmdup.bam", names(peaks)),
+              correlateReads, cross=TRUE,
+              param=readParam(minq=30, 
+                              restrict=paste0("chr", c(1:21, "X", "Y")),
+                              dedup=TRUE))
+names(scc) <- gsub(".q1.*$", "", names(peaks))
+scc.param <- lapply(scc, function(.ele){
+    readsLength <- 50
+    cutline <- 2 * readsLength
+    read_length <- which.max(.ele[1:cutline])
+    fragment_length <- which.max(.ele[cutline:length(.ele)]) + cutline - 1
+    baseline <- which.min(.ele[cutline:length(.ele)]) + cutline - 1
+    #normalized.strand.coefficient
+    NSC <- .ele[fragment_length] / .ele[baseline] 
+    # relative strand correlation
+    RSC <- (.ele[fragment_length] - .ele[baseline])/(.ele[read_length] - .ele[baseline]) 
+    c(read_length=read_length-1,
+         fragment_length=fragment_length-1,
+         baseline=baseline-1,
+         NSC=NSC, 
+         RSC=RSC)
+})
+```
+
+The normalized strand coefficient (NSC) and relative strand correlation (RSC) are strong metrics for assessing signal-to-noise ratios in a ChIP-seq experiment. High-quality ChIP-seq data sets should have NSC values >= 1.05 and RSC values >= 0.8[@landt2012chip]. 
+
+```{r eval=TRUE, fig.width=6, fig.height=9}
+do.call(rbind, scc.param)[, c("NSC", "RSC")]
+op <- par(mfrow=c(4, 2))
+for(i in 1:length(scc)){
+    plot(1:length(scc[[i]])-1, scc[[i]], 
+         xlab="Delay (bp)", ylab="cross-correlation", 
+         main=names(scc)[i], type="l", 
+         ylim=c(scc[[i]][scc.param[[i]]["baseline"]]*.8, max(scc[[i]])*1.1))
+    abline(v=scc.param[[i]]["fragment_length"], col="red", lty=3)
+    abline(h=scc[[i]][scc.param[[i]][c("fragment_length", "read_length", "baseline")]+1], 
+           col=c("blue", "green", "gray30"), lty=2)
+}
+```
+
+Figure 2. Strand cross correlation against delay distance for the ChIP-seq datasets. The absolute and relative height of 'phantom' peak and ChIP peak are useful determinants of the success of a ChIP-seq experiment.
+
+Now we have estimated fragment length and can generate track files for UCSC genome browser. 
+```{r}
+library(GenomicAlignments)
+library(rtracklayer)
+bwPath <- "bw"
+dir.create(bwPath)
+cvgs <- mapply(function(.ele, .name){
+    gal <- readGAlignments(paste0(.name, ".rmdup.bam"))
+    cvg <- coverage(gal, width = as.numeric(.ele["fragment_length"]))
+    seqinfo(cvg) <- seqinfo(TxDb.Hsapiens.UCSC.hg19.knownGene)
+    export.bw(cvg, 
+              con=file.path(bwPath, 
+                            paste0(.name, ".rmdup.bigWig")))
+    cvg
+}, scc.param, names(scc.param))
+```
+
+```{r eval=TRUE, fig.width=4.5, fig.height=9}
+par(op)
+library(ChIPQC)
+samples <- 
+    data.frame(SampleID=gsub("^(.*?).q1.*$", "\\1", names(peaks)), 
+               Factor=gsub("^(.*?)_.*$", "\\1", names(peaks)),
+               Replicate=gsub("^.*?_rep(.*?).q1.*$", "\\1", 
+                              names(peaks)),
+               bamReads=gsub("^(.*?).q1.*$", "\\1.rmdup.bam", 
+                             names(peaks)),
+               Peaks=names(peaks),
+               PeakCaller="narrow")
+samples
+```
+```{r}
+## before filter
+exampleExp <- ChIPQC(experiment=samples, annotaiton="hg19")
+ChIPQCreport(exampleExp, reportFolder="ChIPQC", facetBy="Factor")
+samples.fil <- samples
+samples.fil$Peaks <- gsub("^(.*?).q1.*$", "\\1.fil.bed", names(peaks))
+samples.fil$PeakCaller="bed"
+## after filter
+exampleExp.fil <- ChIPQC(experiment=samples.fil, annotaiton="hg19")
+ChIPQCreport(exampleExp.fil, 
+             reportFolder="ChIPQC.fil", 
+             facetBy="Factor")
+samples.fil.q01 <- samples.fil
+samples.fil.q01$Peaks <- 
+    gsub("^(.*?).q1.*$", "\\1.fil.q01.bed", names(peaks))
+## filtered by qValue from the MACS2 result
+exampleExp.fil.q01 <- ChIPQC(experiment=samples.fil.q01, 
+                             annotaiton="hg19")
+ChIPQCreport(exampleExp.fil.q01, 
+             reportFolder="ChIPQC.fil.q01", 
+             facetBy="Factor")
+```
+
+Here we can see the effect of IDR. The average profile across within peak regions of duplicates, and the correlation between samples as heatmap and by principal component analysis show higher quality of IDR filtered peaks for replicate samples because that they are clustered together in the heatmap and spatially grouped within the PCA plot.
+
+![ChIPQC](figure/ChIP_QC.png)
+
+Figure 3. Peak profile of duplicates. A, B, C) Plot of the average signal profile across peaks before filter, filtered by IDR and filtered by FDR. D, E, F) Plot of correlation between peaksets before filter, filtered by IDR and filtered by FDR. G, H, I) PCA of peaksets before filter, filtered by IDR and filtered by FDR.
+
+
+# 6 Interpreting the results
+
+## Correlation test to determin if there is an association among different sets of peaks
+
+Test the overlaps of all the peaks. From the testing result, we can confirm the widespread association between YAP, TAZ, TEAD and JUN. The vennDiagram shows the numbers of overlapping peak for these TFs. 
+```{r}
+ol <- findOverlapsOfPeaks(GSE66081, connectedPeaks="keepAll")
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=3.5, fig.height=3.5}
+makeVennDiagram(ol)
+```
+
+Figure 4. VennDiagram of overlapping peaks for YAP/TAZ/TEAD/JUN.
+
+
+We want to confirm that not only the peaks are overlapped but also their summits are close to each other.
+
+```{r}
+peaks.summit <- lapply(peaks, function(.ele) {
+    .ele <- shift(.ele, .ele$peak)
+    width(.ele) <- 1
+    .ele
+})
+
+TEAD.summit <- unlist(GRangesList(peaks.summit[group=="TEAD4"]))
+TAZ.summit <- unlist(GRangesList(peaks.summit[group=="TAZ"]))
+bof <- binOverFeature(TEAD.summit, annotationData=TAZ.summit, 
+                      radius=300, nbins=300, FUN=length)
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=3.5, fig.height=3.5}
+plot(as.numeric(rownames(bof)), bof, 
+     ylab="Peak density", 
+     xlab="Distance to the summit of TAZ peaks", 
+     main="Position of TEAD4 peak summit", 
+     type="l", xlim=c(-300, 300))
+```
+
+Figure 5. Position of TEAD4 peak summits relative to the summits of the overlapping YAP/TAZ peaks, in a 600bp window surrounding the summit of YAP/TAZ peaks.
+
+
+## Annotation the peaks by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)**
+
+When we get the peaks called by [MACS2](https://github.com/taoliu/MACS/), we can analyse the distribution of peaks relative to genes annotated in the human genome. The distribution of peaks over exon, intron, enhancer, proximal promoter, 5'UTR and 3'UTR could give you some clues how to annotate the peaks. The distribution can be summarized in the peak centric or nucleotide centric view using the function _assignChromosomeRegion_ in [ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html) package.
+
+```{r}
+overlaps <- ol$peaklist[["TAZ///TEAD4///YAP"]]
+seqlevelsStyle(overlaps) ## == UCSC
+aCR<-assignChromosomeRegion(overlaps, nucleotideLevel=FALSE, 
+                            precedence=c("Promoters", 
+                                         "immediateDownstream", 
+                                         "fiveUTRs", "threeUTRs", 
+                                         "Exons", "Introns"), 
+                            TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene)
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=6, fig.height=4.5}
+par(mar=c(10.1, 4.1, 4.1, 2.1))
+barplot(aCR$percentage, las=3)
+```
+
+Figure 6. Distribution of YAP/TAZ/TEAD peaks over promoter (upstream 1K from TSS), immediatedDownstream (downstream 1K from TES), 5'UTR, 3'UTR, exon, intron, and intergenic region. 
+
+The chromosome distribtuion of the overlapping peaks shows that most of the peaks are located in intergeic regions. Then we use _annotedPeakInBatch_ or _annoPeaks_ function in **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** package to annotate the peaks by most close features in both sides of the peaks. To facilitate the creation and documentation of the annotation data, **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** implement an _annoGR_ class, which is an extension of _GRanges_ class, to represent the annotation data. An _annoGR_ object can be constructed from _EnsDb_, _TxDb_, or the user defined _GRanges_ object by calling the _annoGR_ function. The advantage of this class is that it contains the meta data such as the source and the timestamp (date) of the data source. Use `?annoGR` for more information. Because most of the peaks are far from TSS, we set the `bindingRegion` a very big region (100K).
+
+```{r}
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+annoData <- annoGR(TxDb.Hsapiens.UCSC.hg19.knownGene, feature="gene")
+```
+```{r eval=TRUE}
+annoData
+```
+```{r}
+## annotate the peaks by nearest annotations.
+YAP.TAZ.TEAD4.nearest <- 
+    annotatePeakInBatch(overlaps, 
+                        AnnotationData=annoData)
+## annotate the peaks by both side in a given range.
+YAP.TAZ.TEAD4.2side <- 
+    annotatePeakInBatch(overlaps, 
+                        AnnotationData=annoData, 
+                        output="bindingRegion_bothSidesNSS", 
+                        bindingRegion=c(-100000, 100000))
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=4.5, fig.height=4.5}
+pie1(table(YAP.TAZ.TEAD4.2side$insideFeature))
+```
+
+Figure 7. Pie chart of the features of the overlapping peaks.
+
+The annotations could be saved in XLS file by **[WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)** package to avoid the gene name errors that be introduced inadvertently when using Excel[@zeeberg2004mistaken]. 
+
+```{r}
+## save annotations
+YAP.TAZ.TEAD4.2side.m <- as.data.frame(YAP.TAZ.TEAD4.2side)
+library(WriteXLS)
+WriteXLS("YAP.TAZ.TEAD4.2side.m", 
+         "YAP.TAZ.TEAD4.overlapping.peaks.anno.xls")
+```
+
+With the annotated peak data, you can call the function _getEnrichedGO_ to obtain a list of enriched GO terms. For pathway analysis, you can call function _getEnrichedPATH_ using reactome or KEGG database. Please note that the default setting of `feature_id_type` is "ensembl\_gene\_id". If you are using _TxDb_ as annotation data, please try to change it to "entrez\_id".
+
+
+```{r}
+## enrichment analysis
+library(org.Hs.eg.db)
+over <- getEnrichedGO(YAP.TAZ.TEAD4.2side, 
+                      orgAnn="org.Hs.eg.db", 
+                      feature_id_type="entrez_id", 
+                      maxP=.01, condense=TRUE)
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE}
+head(over[["bp"]][, -c(3, 10)])
+dim(over[["bp"]])
+```
+```{r}
+library(reactome.db)
+path <- getEnrichedPATH(YAP.TAZ.TEAD4.2side, 
+                        orgAnn="org.Hs.eg.db", 
+                        pathAnn="reactome.db", 
+                        feature_id_type="entrez_id", 
+                        maxP=.05)
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE}
+head(path)
+```
+
+Bidirectional promoters are the DNA regions located between the 5' ends of two adjacent genes coded on opposite strands. The two adjacent genes are transcribed to the opposite directions, and often co-regulated by this shared promoter region[@robertson2007genome]. Here is an example to find peaks with bi-directional promoters and output the percentage of the peaks near bi-directional promoters.
+
+```{r}
+bdp <- peaksNearBDP(overlaps, annoData, MaxDistance=100000)
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE}
+bdp
+```
+
+The peaks could be visualized by **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** package.
+
+```{r}
+library(trackViewer)
+gene <- "SYDE2"
+eID <- mget(gene, org.Hs.egSYMBOL2EG)
+gr <- as(annoData[eID[[1]]], "GRanges")
+gr.promoter <- promoters(gr, upstream=5000, downstream=2000)
+seqlevels(gr.promoter) <- "chr1"
+seqinfo(gr.promoter) <- seqinfo(gr.promoter)["chr1"]
+bams.rep1 <- sub(".bam", ".rmdup.bam", 
+                 bam.files[grepl("rep1", bam.files)])
+syde <- lapply(bams.rep1, importBam, ranges=gr.promoter)
+names(syde) <- gsub("_rep1.rmdup.bam", "", bams.rep1)
+trs <- geneModelFromTxdb(TxDb.Hsapiens.UCSC.hg19.knownGene, 
+                         orgDb = org.Hs.eg.db, gr = gr.promoter)
+trs.names <- sapply(trs, function(.ele) .ele@name)
+trs <- trs[match(gene, trs.names)]
+names(trs) <- gene
+optSty <- optimizeStyle(trackList(syde, trs, heightDist=c(.9, .1)), 
+                        theme="col")
+trackList <- optSty$tracks
+viewerStyle <- optSty$style
+for(i in 1:length(trackList)) 
+    setTrackStyleParam(trackList[[i]], "ylabgp", list(cex=.8))
+```
+```{r eval=TRUE}
+vp <- viewTracks(trackList, gr=gr.promoter, viewerStyle=viewerStyle)
+```
+
+Figure 8. tracks of YAP/TAZ/TEAD-bound CDC6 upstream co-ocupied by JUN.
+
+```{r eval=TRUE}
+browseTracks(trackList, gr=gr.promoter)
+```
+
+
+## Discover the binding pattern
+
+Owing to most of the peaks are in the intergenic regions, we questioned whether most YAP/TAZ/TEAD common peaks are located in enhancers. Enhancers can be distinguished from promoters by their epigenetic features, that is, relative enrichment of histone H3 monomethylation (H3K4me1) on Lys4 at enhancers, and trimethylation (H3K4me3) at promoters. We first determine the distribution of the distance between the peaks and known genes. And then check the correlation of peaks and enhancers.
+
+```{r}
+dist2TSS <- 
+    lapply(list(YAP=GSE66081[["YAP"]],
+                TAZ=GSE66081[["TAZ"]],
+                TEAD4=GSE66081[["TEAD4"]],
+                YAP.TAZ.TEAD4=ol.b$peaklist[["YAP.TAZ///TEAD"]]),
+           function(.ele) {
+               .ele <- annotatePeakInBatch(.ele, 
+                                           AnnotationData=annoData,
+                                           output="nearestLocation")
+               .ele$shortestDistance})
+
+dist2TSS.cut <- lapply(dist2TSS, cut, breaks=c(0, 1e3, 1e4, 1e5, 1e10))
+dist2TSS.table <- sapply(dist2TSS.cut, table)
+dist2TSS.percentage <- apply(dist2TSS.table, 2, 
+                             function(.ele) .ele/sum(.ele))
+library(ggplot2)
+library(reshape2)
+dist2TSS.percentage <- melt(dist2TSS.percentage)
+dist2TSS.percentage$value <- dist2TSS.percentage$value * 100
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=5.5, fig.height=3.5}
+ggplot(dist2TSS.percentage, aes(x=Var2, y=value, fill=Var1)) +
+    geom_bar(stat="identity") +
+    xlab("") + ylab("%") + labs(title="Distance to TSS") + theme_bw() + 
+    scale_fill_manual(name="",
+                      values=c("#FF0000FF", "#FF0000BB", 
+                               "#FF000077", "#FF000033"),
+                      labels=c("<1kb", "1-10kb", "10-100kb", ">100kb"))
+```
+
+Figure 9. Absolute distance of YAP, TAZ, TEAD4 or overlapping YAP/TAZ/TEAD peaks to nearest TSS. 
+
+Because over 75% of the peaks are far from known TSS (more than 10Kb), we want to confirm the peaks are bind to active enhancer region. The ChIP-seq data of epigenetic marks of same cell line are availble in GSE49651. We use **[GEOquery](https://www.bioconductor.org/packages/release/bioc/html/GEOquery.html)**[@davis2007geoquery] package to download data from GEO. We can also download the data by **[SRAdb](http://bioconductor.org/packages/release/bioc/html/SRAdb.html)** package and call peaks from raw reads. Here, we use the peaks saved in the GSE49651.
+
+```{r}
+library(GEOquery)
+getGEOSuppFiles("GSE49651")
+epipeaks.files <- dir("GSE49651", full.names=TRUE)
+library(ChIPpeakAnno)
+epipeaks <- lapply(epipeaks.files[3:5], 
+                   function(.ele) toGRanges(gzfile(.ele), format="BED"))
+names(epipeaks) <- 
+    gsub("GSE49651_MDAMB231.(.*?).hg19.*._peaks.txt.gz", "\\1", 
+         basename(epipeaks.files)[3:5])
+```
+
+The presence of H3K4me1 and H3K4me3 peaks, their genomic locations and their overlap can be used as the criteria to define promoters and enhancers. H3K4me3 peaks not overlapping with H3K4me1 peaks and cloase to a TSS (5kb) are defined as promoters, as NA otherwise; H3K4me1 peaks not overlapping with H3K4me3 peaks are defined as enhancers. Promoters or enhancers are defined as active if overlapping with H3K27ac peaks.
+
+```{r}
+promoter.UCSC <- promoters(TxDb.Hsapiens.UCSC.hg19.knownGene, 5e3, 5e3)
+promoter.UCSC <- unique(promoter.UCSC)
+attach(epipeaks)
+ol.promoter <- findOverlapsOfPeaks(H3K4me1, H3K4me3, H3K27Ac, 
+                                   promoter.UCSC, 
+                                   ignore.strand = FALSE)
+promoter <- c(ol.promoter$peaklist[["H3K4me3///H3K27Ac///promoter.UCSC"]],
+              ol.promoter$peaklist[["H3K4me1///H3K4me3///H3K27Ac///promoter.UCSC"]])
+enhancer.active <- ol.promoter$peaklist[["H3K4me1///H3K27Ac"]]
+enhancer.inactive <- ol.promoter$peaklist[["H3K4me1"]]
+
+mcols(enhancer.active) <- DataFrame(type="enhancer.active")
+mcols(enhancer.inactive) <- DataFrame(type="enhancer.inactive")
+mcols(promoter) <- DataFrame(type="promoter")
+types <- c(promoter, enhancer.active, enhancer.inactive)
+
+YAP.TAZ.TEAD <- ol$peaklist[["TAZ///TEAD4///YAP"]]
+seqlevelsStyle(YAP.TAZ.TEAD) <- "UCSC"
+YAP.TAZ.TEAD <- YAP.TAZ.TEAD[seqnames(YAP.TAZ.TEAD) %in% 
+                                 seqlevels(types)]
+YAP.TAZ.TEAD4.type <- findOverlaps(YAP.TAZ.TEAD, types)
+tbl <- table(types[subjectHits(YAP.TAZ.TEAD4.type)]$type)
+tbl["not.classified"] <- length(YAP.TAZ.TEAD) - 
+    length(unique(queryHits(YAP.TAZ.TEAD4.type)))
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=4.5, fig.height=4.5}
+pie1(tbl)
+```
+
+Figure 10. Fraction of YAP/TAZ/TEAD peaks associated with each category.
+
+The binding pattern could be visualized and compared by heatmap and distribution curve from the binding ranges of overlapping peaks of target TFs. For big bedgraph files, [bedtools](http://bedtools.readthedocs.org/en/latest/)[@quinlan2010bedtools] are used to decrease the file size before import into R.
+
+```{r}
+##heatmap
+YAP.TAZ.TEAD.assigned <- YAP.TAZ.TEAD[queryHits(YAP.TAZ.TEAD4.type)]
+YAP.TAZ.TEAD.assigned$type <- types[subjectHits(YAP.TAZ.TEAD4.type)]$type
+YAP.TAZ.TEAD.assigned <- c(YAP.TAZ.TEAD.assigned[YAP.TAZ.TEAD.assigned$type=="enhancer.active"], YAP.TAZ.TEAD.assigned[YAP.TAZ.TEAD.assigned$type=="promoter"])
+YAP.TAZ.TEAD.assigned <- unique(YAP.TAZ.TEAD.assigned)
+
+library(rtracklayer)
+YAP.TAZ.TEAD.assigned.center <- 
+    reCenterPeaks(YAP.TAZ.TEAD.assigned, width=1)
+YAP.TAZ.TEAD.assigned.reCenter <- 
+    reCenterPeaks(YAP.TAZ.TEAD.assigned, width=2000)
+untar("GSE49651/GSE49651_RAW.tar")
+
+bams <- c("YAP", "TAZ", "TEAD4", "JUN")
+library(BSgenome.Hsapiens.UCSC.hg19)
+len <- seqlengths(Hsapiens)
+write.table(len, file="hg19.genome.txt", 
+            quote=FALSE, col.names=FALSE, 
+            sep="\t")
+sapply(bams, function(.ele){
+    system(paste0("genomeCoverageBed -bga -split -ibam ", 
+                  .ele, "_rep1.rmdup.bam -g hg19.genome.txt > ", 
+                  .ele, "_rep1.bedGraph"))
+})
+
+sapply(c("GSM1204470_MDAMB231.H3K4me1_1.hg19.tags.bedGraph.gz",
+         "GSM1204472_MDAMB231.H3K4me3_1.hg19.tags.bedGraph.gz",
+         "GSM1204474_MDAMB231.H3K27Ac_1.hg19.tags.bedGraph.gz"), gunzip)
+files <- c(YAP="YAP_rep1.bedGraph",
+           TAZ="TAZ_rep1.bedGraph",
+           TEAD4="TEAD4_rep1.bedGraph",
+           JUN="JUN_rep1.bedGraph",
+           H3K4me1="GSM1204470_MDAMB231.H3K4me1_1.hg19.tags.bedGraph",
+           H3K4me3="GSM1204472_MDAMB231.H3K4me3_1.hg19.tags.bedGraph",
+           H3K27Ac="GSM1204474_MDAMB231.H3K27Ac_1.hg19.tags.bedGraph")
+export(YAP.TAZ.TEAD.assigned.reCenter, "tmp.bed", format="BED")
+sapply(files, function(.ele) 
+    system(paste("intersectBed -a", .ele, "-b tmp.bed >", 
+                 gsub("bedGraph", "sub.bedGraph", .ele))))
+unlink("tmp.bed")
+library(trackViewer)
+cvglists <- sapply(gsub("bedGraph", "sub.bedGraph", files), 
+                   importData, format="bedGraph")
+names(cvglists) <- names(files)
+sig <- featureAlignedSignal(cvglists, YAP.TAZ.TEAD.assigned.center, 
+                            upstream=1000, downstream=1000)
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE}
+names(sig)
+
+heatmap <- featureAlignedHeatmap(sig, YAP.TAZ.TEAD.assigned.center, 
+                                 upstream=1000, downstream=1000,
+                                 annoMcols=c("type"), 
+                                 margin=c(.1, .01, .15, .25))
+```
+
+Figure 11. Heatmap representing YAP/TAZ/TEAD/JUN binding sites located on promoters and enhancers. the peaks are ranked from the stongest to weakest signal in YAP ChIP, in a window of 1kb centred on the summit of YAP/TAZ/TEAD peaks. H3K27ac, H3K4me1 and H3K4me3 signal in the corresponding genomic regions is shown on the right.
+
+```{r eval=TRUE, message=FALSE, warning=FALSE}
+featureAlignedDistribution(sig, YAP.TAZ.TEAD.assigned.center, 
+                           upstream=1000, downstream=1000,
+                           type="l")
+```
+
+Figure 12. Bimodal distribution of H3K4me1 signal around the summit of YAP/TAZ, TEAD4 and JUN peaks.
+
+## Output a summary of consensus in the peaks
+
+We first get the sequences of the peaks and then summarize the enriched oligos.
+```{r}
+library(BSgenome.Hsapiens.UCSC.hg19)
+YAP.TAZ.TEAD4.uniq <- unique(YAP.TAZ.TEAD4)
+YAP.TAZ.TEAD4.uniq <- YAP.TAZ.TEAD4.uniq[!is.na(YAP.TAZ.TEAD4.uniq$feature)]
+strand(YAP.TAZ.TEAD4.uniq) <- as.character(YAP.TAZ.TEAD4.uniq$feature_strand)
+seq <- getAllPeakSequence(YAP.TAZ.TEAD4.uniq, 
+                          upstream=0, downstream=0, 
+                          genome=Hsapiens)
+freqs <- oligoFrequency(Hsapiens$chr1, MarkovOrder=3)
+os <- oligoSummary(seq, oligoLength=6, MarkovOrder=3, 
+                   quickMotif=TRUE, freqs=freqs, revcomp=TRUE) 
+zscore <- sort(os$zscore)
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=3.5, fig.height=3.5}
+h <- hist(zscore, breaks=100)
+text(zscore[length(zscore)], max(h$counts)/10, 
+     labels=names(zscore[length(zscore)]), adj=1)
+```
+
+Figure 13. The Histogram of zscores of hexamer for YAP/TAZ/TEAD peaks.
+
+
+```{r}
+library(motifStack)
+pfms <- mapply(function(.ele, id)
+    new("pfm", mat=.ele, name=paste("SAMPLE motif", id)), 
+    os$motifs, 1:length(os$motifs))
+```
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=4.5, fig.height=3.5}
+motifStack(pfms)
+```
+
+Figure 14. The motif logo of enriched oligos.
+
+```{r}
+ap1 <- GSE66081[["JUN"]]
+seq.ap1 <- getAllPeakSequence(ap1, upstream=0, downstream=0, genome=Hsapiens)
+os.ap1 <- oligoSummary(seq.ap1, oligoLength=7, MarkovOrder=3, 
+                       quickMotif=FALSE, freqs=freqs, revcomp=TRUE)
+zscore.ap1 <- sort(os.ap1$zscore)
+```
+```{r eval=TRUE, fig.width=3.5, fig.height=3.5}
+h.ap1 <- hist(zscore.ap1, breaks=100)
+text(zscore.ap1[length(zscore.ap1)], max(h.ap1$counts)/10, 
+     labels=names(zscore.ap1[length(zscore.ap1)]), adj=1)
+```
+
+Figure 15. The Histogram of zscores of hexamer for JUN peaks.
+
+By function _oligoSummary_, we get exactly same motifs as it shown in the model of complex formed by YAP/TAZ/TEAD and AP-1 reported by Francesca[@zanconato2015genome].
+
+The _oligoSummary_ is a quick tool to calculate the enriched k-mers in the peaks. To get accurate motifs, multiple softwares could be used, such as [the MEME Suite](http://meme-suite.org/doc/meme.html?man_type=web)[@bailey1994fitting], [Consensus](http://stormo.wustl.edu/consensus/html/Html/main.html)[@hertz1990identification],  [rGADEM](https://www.bioconductor.org/packages/release/bioc/html/rGADEM.html), [Homer](http://homer.salk.edu/homer/), and et. al. 
+
+## Build Regulatory Network from ChIP-seq and Expression Data
+
+Intersecting genes with promoter regions bound by YAP/TAZ from the ChIP experiment and genes differential expressed in knockdown of YAP/TAZ allow us to identify genes directly/indirectly regulated by YAP/TAZ by `GeneNetworkBuilder` package.
+
+Gene expression data are downloaded from GSE59232 by `GEOquery` package.
+
+```{r}
+library(GEOquery)
+library(limma)
+gset <- getGEO("GSE59232", GSEMatrix =TRUE, AnnotGPL=TRUE)[[1]]
+pD <- pData(gset)[, c("title", "geo_accession")]
+gset <- gset[, grepl("MDA-MB-231 cells", pD$title, fixed = TRUE)]
+pD <- pData(gset)[, c("title", "geo_accession")]
+ex <- exprs(gset) ## log2 transformed expression profile
+fl <- do.call(rbind, 
+              strsplit(sub("MDA-MB-231 cells ", 
+                           "", pD$title), ", "))
+sml <- sub("#.$", "", fl[, 1])
+design.table <- data.frame(group=sml, 
+                           batch=fl[, 1],
+                           replicate=fl[, 2])
+design <- model.matrix(~ -1 + group + batch + replicate, 
+                       data = design.table)
+colnames(design) <- sub("group", "", 
+                        make.names(colnames(design)))
+fit <- lmFit(gset, design)
+cont.matrix <- makeContrasts(contrasts = "siYAP.TAZ-siControl", 
+                             levels=design)
+fit2 <- contrasts.fit(fit, cont.matrix)
+fit2 <- eBayes(fit2)
+tT <- topTable(fit2, adjust="fdr", number = nrow(fit2))
+
+
+library(simpIntLists)
+interactionmap <- findInteractionList("human", "Official")
+interactionmap <- lapply(interactionmap, function(.ele) 
+    cbind(from=as.character(.ele$name), 
+          to=as.character(.ele$interactors)))
+interactionmap <- do.call(rbind, interactionmap)
+library(GeneNetworkBuilder)
+rootgene <- "TAZ"
+TFbindingTable <- 
+    cbind(from=rootgene,
+          to=unique(YAP.TAZ.TEAD4.nearest.anno$symbol))
+sifNetwork <-
+    buildNetwork(TFbindingTable=TFbindingTable, 
+                 interactionmap=interactionmap, level=2)
+tT$symbols <- tT$Gene.symbol
+tT <- tT[, c("ID", "logFC", "P.Value", "symbols")]
+expressionData <- tT[!duplicated(tT[, "symbols"]), ]
+cifNetwork <-
+    filterNetwork(rootgene=rootgene, sifNetwork=sifNetwork, 
+                  exprsData=expressionData, mergeBy="symbols",
+                  miRNAlist=character(0), 
+                  tolerance=1, cutoffPVal=0.001, 
+                  cutoffLFC=1.5)
+## polish network
+gR<-polishNetwork(cifNetwork)
+```
+
+```{r eval=TRUE}
+## plot by Rgraphviz
+library(Rgraphviz)
+plotNetwork<-function(gR, layouttype="dot", ...){
+    if(!is(gR,"graphNEL")) stop("gR must be a graphNEL object")
+    if(!(GeneNetworkBuilder:::inList(layouttype, c("dot", "neato", "twopi", "circo", "fdp")))){
+        stop("layouttype must be dot, neato, twopi, circo or fdp")
+    }
+    g1<-Rgraphviz::layoutGraph(gR, layoutType=layouttype, ...)
+    nodeRenderInfo(g1)$col <- nodeRenderInfo(gR)$col
+    nodeRenderInfo(g1)$fill <- nodeRenderInfo(gR)$fill
+    renderGraph(g1)
+}
+plotNetwork(gR)
+```
+
+```{r, eval=TRUE}
+browseNetwork(gR)
+```
+
+# Summary
+
+This workflow describes the steps of comparing two or more TFs with duplicates, from data downloading, to generating the motif logos. All steps are performed within the R environment and mostly use functions from Bioconductor packages. In particular, the core of the downstream ananlysis is based on **ChIPpeakAnno** package. This workflow get same results as the original report. 
+
+# Software availability
+
+This workflow depends on various packages from version 3.3 of the Bioconductor project, running on R version 3.3.0 or higher. Version numbers for all packages used are shown below.
+
+```{r eval=TRUE}
+sessionInfo()
+```
+
+The command-line tools used in the workflow including SRA Toolkit (version 2.3.4), MACS2 (version 2.1.0) and Bedtools (version 2.25.0) must be installed on the system.
+
+# Author contributions
+J.O. developed and tested the workflow. L.J.Z. provided direction on the design of the workflow. J.O., J.Y. and L.J.Z. wrote the article.
+
+# ACKNOWLEDGEMENTS
+
+We would like to thank the support from the Department of Molecular, Cell and Cancer Biology (MCCB) at UMass Medical School (UMMS). We thank the early adopters who provided great ideas and feedbacks to enhance the features of the software.
+
+# REFERENCES

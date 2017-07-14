@@ -1,0 +1,47 @@
+.left {
+  left:-8.33%;
+  text-align: left;
+  float: left;
+  width:25%;
+  z-index:-10;
+}
+
+.right {
+  left:31.25%;
+  top: 75px;
+  float: right;
+  text-align: left;
+  z-index:-10;
+  width:75%;
+  font-size: 0.5em;
+}
+
+.small-font {
+    font-size: 0.6em;
+}
+
+.reveal blockquote {
+    width: 90%;
+    text-align: left;
+}
+
+.slide table {
+    width: 90%;
+}
+
+.level2 p {
+    text-align: left;
+    font-size: 0.8em;
+}
+
+.reveal section img {
+    border: 0;
+    max-height: 60%;
+    max-width: 60% !important;
+    margin: 0 auto;
+    display: block;
+}
+
+section:first-child h1{
+    font-size: 1.8em;
+}
