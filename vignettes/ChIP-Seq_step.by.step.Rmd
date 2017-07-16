@@ -15,9 +15,8 @@ output:
         css: ["styles.css", "custom.css"]
 ---
 ## Prerequisites
-- You are bioinformatician or major in bioinformatics
-- R(>= 3.4)/Bioconductor(>= 3.5) installed
-- Installed following packages
+- R(>= 3.4)/Bioconductor(>= 3.5)
+- Packages
 
      |      |       
 ------------------------------|---------------------------|-----------------------
@@ -67,24 +66,23 @@ load(file.path(extdata, "minimal.rds"))
 > Chromatin immunoprecipitation followed by sequencing (ChIP-seq) is a 
 > technique for genome-wide profiling of DNA-binding proteins, histone 
 > modifications or nucleosomes.
->
->  -- *Peter J. Park*
+>  <span align="right" width="300px" style="display:inline-block;"> -- [*Peter J. Park*](http://www.nature.com/nrg/journal/v10/n10/full/nrg2641.html) </span>
 
 ![ChIP-seq method](figure/major.methods.detect.functional.elements.png)
 
-(Modified from PLoS Biol 9-e1001046,2001 M.Pazin)
+<div class="citation">(Modified from [PLoS Biol 9-e1001046,2001 M.Pazin](http://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1001046))</div>
 
 ## ChIP-seq experiment workflow
 
 ![ChIP-seq workflow](figure/ChIPseq.workflow.png)
 
-(Modified from Nature Reviews Genetics doi:10.1038/nrg2641, P.Park)
+<div class="citation">(Modified from [Nature Reviews Genetics doi:10.1038/nrg2641, P.Park](http://www.nature.com/nrg/journal/v10/n10/full/nrg2641.html))</div>
 
 ## Call peaks
 
 ![call peaks](figure/call.peaks.png)
 
-(Modified from Nature Methods doi:10.1038/nmeth.1371, S.Pepke)
+<div class="citation">(Modified from [Nature Methods doi:10.1038/nmeth.1371, S.Pepke](http://www.nature.com/nmeth/journal/v6/n11s/abs/nmeth.1371.html))</div>
 
 ## ChIP-seq data analysis workflow
 <div class="left">
@@ -94,11 +92,9 @@ load(file.path(extdata, "minimal.rds"))
 <div class="right">
 * Quality Control: [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [ChIPQC](http://www.bioconductor.org/packages/release/bioc/html/ChIPQC.html)
 
-* mapping: [bowtie1/2](http://bowtie-bio.sourceforge.net/index.shtml)
+* mapping: [bowtie1/2](http://bowtie-bio.sourceforge.net/index.shtml), [Rsubread](http://bioconductor.org/packages/release/bioc/html/Rsubread.html)
 
-* view tracks: [IGV](https://www.broadinstitute.org/igv/home), [UCSC genome browser](http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38), [rtracklayer](http://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html), [trackViewer](http://www.bioconductor.org/packages/release/bioc/html/trackViewer.html)
-
-* peak calling: (Modified from Nature Immunology doi:10.1038/ni.2117, B.Kidder)
+* peak calling: <span class="citation">(Modified from [Nature Immunology doi:10.1038/ni.2117, B.Kidder](http://www.nature.com/ni/journal/v12/n10/full/ni.2117.html))</span>
 
 |   | Type of peak | Example | Representative tools |
 |---|--------------|---------|----------------------|
@@ -106,9 +102,9 @@ load(file.path(extdata, "minimal.rds"))
 |![](figure/peakTypeII.jpg) | Sharp | CTCF | [MACS](http://liulab.dfci.harvard.edu/MACS/) |
 |![](figure/peakTypeIII.jpg) | Sharp & broad | Pol II | [ZINBA](https://code.google.com/p/zinba/) |
 
-* annotation and enrichment analysis: [ChIPpeakAnno](http://www.bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html), [ChIPseeker](http://www.bioconductor.org/packages/release/bioc/html/ChIPseeker.html)
+* annotation and enrichment analysis: [ChIPpeakAnno](http://www.bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html), [ChIPseeker](http://www.bioconductor.org/packages/release/bioc/html/ChIPseeker.html), [clusterProfiler](http://www.bioconductor.org/packages/release/bioc/html/clusterProfiler.html), [GOstats](http://www.bioconductor.org/packages/release/bioc/html/GOstats.html)
 
-* sequence logo: [The MEME Suite](http://meme.nbcr.net/meme/index.html), [homer](http://homer.salk.edu/homer/motif/)
+* downstream analysis: [GeneNetworkBuilder](http://www.bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html), [IGV](https://www.broadinstitute.org/igv/home), [UCSC genome browser](http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38), [rtracklayer](http://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html), [trackViewer](http://www.bioconductor.org/packages/release/bioc/html/trackViewer.html), [The MEME Suite](http://meme.nbcr.net/meme/index.html), [homer](http://homer.salk.edu/homer/motif/)
 </div>
 
 ## About the workflow
@@ -119,17 +115,17 @@ Reads are first aligned to the genome using the **[Rsubread](http://bioconductor
 
 Peaks are called by **[MACS2](https://github.com/taoliu/MACS/)**. 
 
-The peaks were annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** and **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** packages.
+The peaks were annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** , **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** packages, **[GeneNetworkBuilder](http://bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html)** packages.
 
-The application of the methods will be demonstrated on a publicly available ChIP-seq data sets. The data set studies genome-wide association between YAP/TAZ/TEAD peaks at enhancers drives oncogenic growth (Zanconato et al., 2015). The intention is to provide readers with a full usage example from which they can construct analysis of their own data.
+The application of the methods will be demonstrated on a publicly available ChIP-seq data sets. The data set studies genome-wide association between YAP/TAZ/TEAD peaks at enhancers drives oncogenic growth ([Zanconato et al., 2015](http://www.nature.com/ncb/journal/v17/n9/abs/ncb3216.html)). The intention is to provide readers with a full usage example from which they can construct analysis of their own data.
 
 ## Download data from Gene Expression Omnibus
 
-NCBI GEO ID | SRA project | Description                                                                              
-------------|-------------|-------------------------------------------------------------------------------------------
-GSE66081    | SRP055170   | the data of ChIP-seq raw reads for the study of association between YAP/TAZ/TEAD and AP-1 at enhancers drivers oncogenic trowth
-GSE49651    |             | the H3K27Ac, H3K4me1, H3K4me3 ChIP-seq data in breast cancer cell line
-GSE59232    |             | transcriptomic data of Affymetrix GeneChips Human Genome U133 Plus 1.0
+NCBI GEO ID | SRA project | Description                                                                               | package
+------------|-------------|-------------------------------------------------------------------------------------------|----------
+[GSE66081](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE66081)    | SRP055170   | the data of ChIP-seq raw reads for the study of association between YAP/TAZ/TEAD and AP-1 at enhancers drivers oncogenic trowth | [SRAdb](http://bioconductor.org/packages/release/bioc/html/SRAdb.html)
+[GSE49651](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE49651)    |             | the H3K27Ac, H3K4me1, H3K4me3 ChIP-seq data in breast cancer cell line | [GEOquery](http://bioconductor.org/packages/release/bioc/html/GEOquery.html)
+[GSE59232](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE59232)    |             | transcriptomic data of Affymetrix GeneChips Human Genome U133 Plus 1.0 | [GEOquery](http://bioconductor.org/packages/release/bioc/html/GEOquery.html)
 
 ***
 
@@ -257,11 +253,11 @@ filter <- FilterRules(list(seqn = function(x) x$rname == "chr1"))
 ## sort and index
 null <- sapply(group, function(gp) {
     sortBam(paste0(gp, ".bam"), paste0(gp, ".srt"))
-    file.copy(paste0(gp, ".srt.bam.bam"), 
+    file.copy(paste0(gp, ".srt.bam"), 
               paste0(gp, ".bam"), overwrite = TRUE)
     indexBam(paste0(gp, ".bam"))
 })
-## subset
+## subset (optional)
 null <- sapply(group, function(gp) {
     dest <- paste0(gp, ".chr1.bam")
     filterBam(paste0(gp, ".bam"), paste0(gp, ".chr1.bam"), 
@@ -322,7 +318,7 @@ null <- sapply(IgG.bg[3], function(.ele){
 Before we call peaks, we may want to check the difference between ChIP signal and background signal.
 
 By `ChIPpeakAnno::cumulativePercentage` function, the difference between the cumulative percentage 
-tag allocation in Input and IP could be clearly checked (??ref).
+tag allocation in Input and IP could be clearly checked ([Diaz et al., 2012](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3342857/), [Ramírez et al., 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4987876/)).
 
 ```{r eval=FALSE}
 library(ChIPpeakAnno)
@@ -380,6 +376,20 @@ peaks.bk <- peaks
 peaks <- lapply(peaks, function(.ele) 
     .ele[order(.ele$pValue, decreasing=TRUE)])
 ```
+
+<div class="practice">
+<h2>Exercise: Import data by `toGRanges`</h2>
+```{r}
+library(ChIPpeakAnno)
+packagePath <- system.file("extdata", package = "ChIPpeakAnno")
+dir(packagePath, "gff|bed|narrowPeak|broadPeak|gz")
+toGRanges(file.path(packagePath, "GFF_peaks.gff"), format = "GFF")
+toGRanges(file.path(packagePath, "WS220.bed"), format = "BED")
+toGRanges(file.path(packagePath, "peaks.narrowPeak"), format = "narrowPeak")
+toGRanges(file.path(packagePath, "TAF.broadPeak"), format = "broadPeak")
+toGRanges(file.path(packagePath, "wgEncodeUmassDekker5CGm12878PkV2.bed.gz"), format = "BED")
+```
+</div>
 
 ***
 
@@ -605,6 +615,26 @@ Test the overlaps of all the peaks. From the testing result, we can confirm the 
 ```{r eval=FALSE}
 ol <- findOverlapsOfPeaks(GSE66081, connectedPeaks="keepAll")
 ```
+
+<div class="practice">
+<h2>Exercise: find overlaps among peak lists</h2>
+```{r}
+library(ChIPpeakAnno)
+packagePath <- system.file("extdata", package = "ChIPpeakAnno")
+ex.broadPeaks <- dir(packagePath, "broadPeak")
+ex.peaks <- sapply(ex.broadPeaks, function(.ele){
+    toGRanges(file.path(packagePath, .ele), format="broadPeak")
+})
+ex.peaks
+ex.overlaps <- findOverlapsOfPeaks(ex.peaks)
+names(ex.overlaps)
+names(ex.overlaps$peaklist)
+makeVennDiagram(ex.overlaps)
+```
+</div>
+
+***
+
 ```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=5, fig.height=5}
 makeVennDiagram(ol)
 ```
@@ -666,30 +696,16 @@ annoData[1]
 ```
 
 
-## Check distribution of peaks
+## Annotate by `annotatePeakInBatch`
 
-The distribution of peaks over exon, intron, enhancer, proximal promoter, 5'UTR and 3'UTR could give you some clues how to annotate the peaks. The distribution can be summarized in the peak centric or nucleotide centric view using the function _assignChromosomeRegion_ in [ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html) package.
+Then we use _annotatePeakInBatch_ or _annoPeaks_ function in **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** package to annotate the peaks. Depend on the experiment, we can annotate the peaks in multiple ways.
 
-```{r eval=FALSE}
-overlaps <- ol$peaklist[["TAZ///TEAD4///YAP"]]
-seqlevelsStyle(overlaps) ## == UCSC
-aCR<-assignChromosomeRegion(overlaps, nucleotideLevel=FALSE,
-                            TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene)
-```
+![annotatePeakInBatch](figure/annotatePeakInBatch.png)
 
 ***
 
-```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5}
-par(mar=c(10.1, 4.1, 4.1, 2.1))
-barplot(aCR$percentage, las=3)
-```
-
-
-## Annotate by `annotatePeakInBatch`
-
-The chromosome distribtuion of the overlapping peaks shows that many of the peaks are located in intergeic regions. Then we use _annotedPeakInBatch_ or _annoPeaks_ function in **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** package to annotate the peaks by most close features in both sides of the peaks. Because most of the peaks are far from TSS, we set the `bindingRegion` a very big region (100K).
-
 ```{r eval=FALSE}
+overlaps <- ol$peaklist[["TAZ///TEAD4///YAP"]]
 ## annotate the peaks by nearest annotations.
 YAP.TAZ.TEAD4.nearest <- 
     annotatePeakInBatch(overlaps, 
@@ -702,6 +718,19 @@ YAP.TAZ.TEAD4.2side <-
                         output="nearestBiDirectionalPromoters", 
                         bindingRegion=c(-100000, 100000))
 ```
+
+<div class="practice">
+<h2>Exercise: annotatePeakInBatch</h2>
+```{r}
+library(ChIPpeakAnno)
+packagePath <- system.file("extdata", package = "ChIPpeakAnno")
+ex.peaks <- toGRanges(file.path(packagePath, "YY1.broadPeak"), format="broadPeak")
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+annoData <- toGRanges(TxDb.Hsapiens.UCSC.hg19.knownGene)
+ex.peaks.anno <- annotatePeakInBatch(ex.peaks, AnnotationData = annoData)
+ex.peaks.anno
+```
+</div>
 
 ***
 
@@ -819,13 +848,53 @@ vp <- viewTracks(trackList, gr=gr.promoter,
 ***
 Too complicated? Try `browseTracks`
 
-```{r eval=TRUE}
-browseTracks(trackList, gr=gr.promoter)
+<div class="practice">
+<h2>Exercise: browseTracks</h2>
+```{r}
+library(trackViewer)
+library(org.Hs.eg.db)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(ChIPseqStepByStep)
+(ex.gr <- parse2GRanges("chr1:85664729-85671728:-"))
+## get gene model
+trs <- geneModelFromTxdb(TxDb.Hsapiens.UCSC.hg19.knownGene, 
+                         orgDb = org.Hs.eg.db, gr = ex.gr)
+## import signals
+packagePath <- system.file("extdata", "bedGraph", package = "ChIPseqStepByStep")
+(ex.bg <- dir(packagePath, "bedGraph"))
+ex.scores <- sapply(ex.bg, function(.ele){
+    importScore(file.path(packagePath, .ele), 
+               format = "bedGraph", 
+               ranges = ex.gr)
+})
+## browse the tracks
+browseTracks(trackList(ex.scores, trs), gr=ex.gr)
 ```
+</div>
+
+## Check distribution of peaks
+
+The distribution of peaks over exon, intron, enhancer, proximal promoter, 5'UTR and 3'UTR could give you some clues how to annotate the peaks. The distribution can be summarized in the peak centric or nucleotide centric view using the function _assignChromosomeRegion_ in [ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html) package.
+
+```{r eval=FALSE}
+seqlevelsStyle(overlaps) ## == UCSC
+aCR<-assignChromosomeRegion(overlaps, nucleotideLevel=FALSE,
+                            TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene)
+```
+
+***
+
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=9, fig.height=4.5}
+par(mar=c(10.1, 4.1, 4.1, 2.1))
+barplot(aCR$percentage, las=3)
+```
+
 
 ## Discover the binding pattern
 
 Owing to most of the peaks are in the intergenic regions, we questioned whether most YAP/TAZ/TEAD common peaks are located in enhancers. Enhancers can be distinguished from promoters by their epigenetic features, that is, relative enrichment of histone H3 monomethylation (H3K4me1) on Lys4 at enhancers, and trimethylation (H3K4me3) at promoters. We first determine the distribution of the distance between the peaks and known genes. And then check the correlation of peaks and enhancers.
+
+***
 
 ```{r eval=FALSE}
 dist2TSS <- 
@@ -838,11 +907,6 @@ dist2TSS <-
                                            AnnotationData=annoData,
                                            output="nearestLocation")
                .ele$shortestDistance})
-```
-
-***
-
-```{r eval=FALSE}
 dist2TSS.cut <- lapply(dist2TSS, cut, breaks=c(0, 1e3, 1e4, 1e5, 1e10))
 dist2TSS.table <- sapply(dist2TSS.cut, table)
 dist2TSS.percentage <- apply(dist2TSS.table, 2, 
@@ -866,6 +930,7 @@ ggplot(dist2TSS.percentage, aes(x=Var2, y=value, fill=Var1)) +
 ```
 
 ***
+
 Because over 70% of the peaks are far from known TSS (more than 10Kb), we want to confirm the peaks are bind to active enhancer region. The ChIP-seq data of epigenetic marks of same cell line are availble in GSE49651. 
 
 We use **[GEOquery](https://www.bioconductor.org/packages/release/bioc/html/GEOquery.html)** package to download data from GEO. We can also download the data by **[SRAdb](http://bioconductor.org/packages/release/bioc/html/SRAdb.html)** package and call peaks from raw reads. Here, we use the peaks saved in the GSE49651.
@@ -883,7 +948,13 @@ names(epipeaks) <-
 ```
 
 ***
+
 The presence of H3K4me1 and H3K4me3 peaks, their genomic locations and their overlap can be used as the criteria to define promoters and enhancers. H3K4me3 peaks not overlapping with H3K4me1 peaks and cloase to a TSS (5kb) are defined as promoters, as NA otherwise; H3K4me1 peaks not overlapping with H3K4me3 peaks are defined as enhancers. Promoters or enhancers are defined as active if overlapping with H3K27ac peaks.
+
+![histoneModification](figure/histModify.png)
+<div class="citation">(Modified from [Nature Cell Biology, doi:10.1038/ncb3216, F. Zanconato](https://www.nature.com/ncb/journal/v17/n9/full/ncb3216.html))</div>
+
+***
 
 ```{r eval=FALSE}
 promoter.UCSC <- promoters(TxDb.Hsapiens.UCSC.hg19.knownGene, 5e3, 5e3)

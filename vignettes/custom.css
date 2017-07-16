@@ -32,6 +32,7 @@
 .level2 p {
     text-align: left;
     font-size: 0.8em;
+    line-height: 1.1;
 }
 
 .reveal section img {
@@ -44,4 +45,40 @@
 
 section:first-child h1{
     font-size: 1.8em;
+    margin-bottom: 100px;
+}
+
+.reveal section .citation {
+    font-size: 0.5em;
+}
+
+.reveal section .practice {
+    width: 95%;
+    margin-top: 10px;
+    font-size: 24px;
+    position: relative;
+    font-family: 'Lucida Grande', Tahoma, Verdana, Arial, sans-serif;
+    background-color: white;
+    padding: 9px 11px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #c5c5c5;
+    -webkit-box-shadow: 0 3px 8px rgba(0, 0, 0, .25);
+    -moz-box-shadow: 0 3px 8px rgba(0, 0, 0, .25);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, .25);
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+
+.reveal section .practice h2 {
+    color: #666;
+    font-size: 1.2em; 
+    padding-bottom: 5px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #dcdbda;
+}
+.reveal section .practice p { 
+    padding-bottom: 25px; 
+    font-size: 1.1em; 
+    color: #222;
 }
