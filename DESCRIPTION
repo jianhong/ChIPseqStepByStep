@@ -16,8 +16,7 @@ Imports:
     ChIPpeakAnno,
     trackViewer,
     GeneNetworkBuilder,
-    motifStack
-Suggests:
+    motifStack,
     SRAdb,
     reshape2,
     Rsubread,
