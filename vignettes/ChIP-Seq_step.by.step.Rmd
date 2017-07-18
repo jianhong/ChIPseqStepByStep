@@ -25,8 +25,7 @@ output:
 [trackViewer](http://www.bioconductor.org/packages/release/bioc/html/trackViewer.html) | [rtracklayer](http://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) | [GenomicAlignments](http://www.bioconductor.org/packages/release/bioc/html/GenomicAlignments.html)
 [motifStack](http://www.bioconductor.org/packages/release/bioc/html/motifStack.html) | [ChIPQC](http://www.bioconductor.org/packages/release/bioc/html/ChIPQC.html) | [csaw](http://www.bioconductor.org/packages/release/bioc/html/csaw.html)
 [BSgenome.Hsapiens.UCSC.hg19](http://www.bioconductor.org/packages/release/bioc/html/BSgenome.Hsapiens.UCSC.hg19.html) | [org.Hs.eg.db](http://www.bioconductor.org/packages/release/bioc/html/org.Hs.eg.db.html) | [reactome.db](http://www.bioconductor.org/packages/release/bioc/html/reactome.db.html)
-[TxDb.Hsapiens.UCSC.hg19.knownGene](http://www.bioconductor.org/packages/release/bioc/html/TxDb.Hsapiens.UCSC.hg19.knownGene.html) |  |
-
+[TxDb.Hsapiens.UCSC.hg19.knownGene](http://www.bioconductor.org/packages/release/bioc/html/TxDb.Hsapiens.UCSC.hg19.knownGene.html) |  [EnsDb.Hsapiens.v75](https://bioconductor.org/packages/release/data/annotation/html/EnsDb.Hsapiens.v75.html) |
 
 ```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 suppressPackageStartupMessages({
@@ -61,7 +60,7 @@ extdata <- system.file("extdata", package = "ChIPseqStepByStep")
 load(file.path(extdata, "minimal.rds"))
 ```
 
-## What is ChIP-seq {.small-font}
+## What is ChIP-seq
 
 > Chromatin immunoprecipitation followed by sequencing (ChIP-seq) is a 
 > technique for genome-wide profiling of DNA-binding proteins, histone 
@@ -169,7 +168,6 @@ info <- merge(experiment[, c("experiment_accession",
 info[1:5, 2:3]
 ```
 
-   
 ***
 
 These files are downloaded in the SRA format, and need to be unpacked to the FASTQ format prior to alignment. This can be done using the _fastq-dump_ utility from **[SRA Toolkit](http://www.ncbi.nlm.nih.gov/books/NBK158900/)**.
@@ -218,11 +216,30 @@ bam.files <- paste0(group, ".bam")
 
 ##getPhredOffset, if the offset is not correct, it will report error.
 x <- qualityScores(filename=fastq.files[1], 
-                   input_format="FASTQ", offset=33)
+                   input_format="FASTQ", offset=33, 
+                   nreads=1000)
 ```
 ```{r eval=TRUE}
 x[1:3, 1:10]
 ```
+
+***
+
+<div class="practice">
+<h2>Exercise: Check the offset of quality scores</h2>
+```{r}
+library(Rsubread)
+reads <- system.file("extdata","reads.txt.gz",package="Rsubread")
+head(qualityScores(filename = reads,
+                   input_format = "gzFASTQ", 
+                   offset = 33,
+                   nreads = 100))  ## please check the errors
+head(qualityScores(filename = reads,
+                   input_format = "gzFASTQ", 
+                   offset = 64,
+                   nreads = 100))
+```
+</div>
 
 ***
 
@@ -388,6 +405,12 @@ toGRanges(file.path(packagePath, "WS220.bed"), format = "BED")
 toGRanges(file.path(packagePath, "peaks.narrowPeak"), format = "narrowPeak")
 toGRanges(file.path(packagePath, "TAF.broadPeak"), format = "broadPeak")
 toGRanges(file.path(packagePath, "wgEncodeUmassDekker5CGm12878PkV2.bed.gz"), format = "BED")
+packagePath <- system.file("extdata", "macs", package = "ChIPseqStepByStep")
+macs2.files <- dir(packagePath, pattern="*.q1_peaks.narrowPeak$")
+peaks <- sapply(macs2.files, function(.ele) 
+    toGRanges(file.path(packagePath, .ele), format="narrowPeak"))
+peaks.bk <- peaks
+peaks <- lapply(peaks, function(.ele) .ele[order(.ele$pValue, decreasing=TRUE)])
 ```
 </div>
 
@@ -620,16 +643,17 @@ ol <- findOverlapsOfPeaks(GSE66081, connectedPeaks="keepAll")
 <h2>Exercise: find overlaps among peak lists</h2>
 ```{r}
 library(ChIPpeakAnno)
-packagePath <- system.file("extdata", package = "ChIPpeakAnno")
-ex.broadPeaks <- dir(packagePath, "broadPeak")
-ex.peaks <- sapply(ex.broadPeaks, function(.ele){
-    toGRanges(file.path(packagePath, .ele), format="broadPeak")
+packagePath <- system.file("extdata", "filtered", package = "ChIPseqStepByStep")
+filtedFiles <- dir(packagePath, ".bed")
+GSE66081 <- sapply(filtedFiles, function(.ele){
+    toGRanges(file.path(packagePath, .ele), format="BED")
 })
-ex.peaks
-ex.overlaps <- findOverlapsOfPeaks(ex.peaks)
-names(ex.overlaps)
-names(ex.overlaps$peaklist)
-makeVennDiagram(ex.overlaps)
+names(GSE66081) <- sub(".bed", "", names(GSE66081))
+lengths(GSE66081)
+ol <- findOverlapsOfPeaks(GSE66081)
+names(ol)
+names(ol$peaklist)
+makeVennDiagram(ol)
 ```
 </div>
 
@@ -695,6 +719,25 @@ annoData <- toGRanges(TxDb.Hsapiens.UCSC.hg19.knownGene, feature="gene")
 annoData[1]
 ```
 
+***
+
+<div class="practice">
+<h2>Exercise: Prepare annotation data from Ensembl/UCSC based annotation package</h2>
+
+- Ensembl Archives: http://www.ensembl.org/info/website/archives/index.html
+- UCSC' release numbers: https://genome.ucsc.edu/FAQ/FAQreleases.html
+
+```{r}
+library(EnsDb.Hsapiens.v75)
+toGRanges(EnsDb.Hsapiens.v75)
+toGRanges(EnsDb.Hsapiens.v75, feature = "transcript")
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+annoData <- toGRanges(TxDb.Hsapiens.UCSC.hg19.knownGene)
+toGRanges(TxDb.Hsapiens.UCSC.hg19.knownGene, feature = "geneModel")
+toGRanges(TxDb.Hsapiens.UCSC.hg19.knownGene, feature = "threeUTR")
+```
+</div>
+
 
 ## Annotate by `annotatePeakInBatch`
 
@@ -722,13 +765,15 @@ YAP.TAZ.TEAD4.2side <-
 <div class="practice">
 <h2>Exercise: annotatePeakInBatch</h2>
 ```{r}
-library(ChIPpeakAnno)
-packagePath <- system.file("extdata", package = "ChIPpeakAnno")
-ex.peaks <- toGRanges(file.path(packagePath, "YY1.broadPeak"), format="broadPeak")
-library(TxDb.Hsapiens.UCSC.hg19.knownGene)
-annoData <- toGRanges(TxDb.Hsapiens.UCSC.hg19.knownGene)
-ex.peaks.anno <- annotatePeakInBatch(ex.peaks, AnnotationData = annoData)
-ex.peaks.anno
+overlaps <- ol$peaklist[["TAZ///TEAD4///YAP"]]
+YAP.TAZ.TEAD4.nearest <- 
+    annotatePeakInBatch(overlaps, 
+                        AnnotationData=annoData)
+YAP.TAZ.TEAD4.promoter <- 
+    annotatePeakInBatch(overlaps, 
+                        AnnotationData=annoData, 
+                        output="nearestBiDirectionalPromoters", 
+                        bindingRegion=c(-10000, 2000))
 ```
 </div>
 
@@ -748,6 +793,19 @@ YAP.TAZ.TEAD4.nearest.anno <-
            feature_id_type = "entrez_id")
 YAP.TAZ.TEAD4.nearest.anno[1:3]
 ```
+
+***
+
+<div class="practice">
+<h2>Exercise: addGeneIDs</h2>
+```{r}
+library(org.Hs.eg.db)
+YAP.TAZ.TEAD4.promoter.anno <- 
+    addGeneIDs(annotatedPeak = YAP.TAZ.TEAD4.promoter, 
+               orgAnn = org.Hs.eg.db, 
+               feature_id_type = "entrez_id")
+```
+</div>
 
 ## Save annotation results
 
@@ -815,21 +873,25 @@ The peaks could be visualized by **[trackViewer](http://bioconductor.org/package
 
 ```{r eval=FALSE}
 library(trackViewer)
+## prepare ranges to view
 gene <- "SYDE2"
 eID <- mget(gene, org.Hs.egSYMBOL2EG)
 gr <- as(annoData[eID[[1]]], "GRanges")
 gr.promoter <- promoters(gr, upstream=5000, downstream=2000)
 seqlevels(gr.promoter) <- "chr1"
 seqinfo(gr.promoter) <- seqinfo(gr.promoter)["chr1"]
+## import data
 bams.rep1 <- sub(".bam", ".rmdup.bam", 
                  bam.files[grepl("rep1", bam.files)])
 syde <- lapply(bams.rep1, importBam, ranges=gr.promoter)
 names(syde) <- gsub("_rep1.rmdup.bam", "", bams.rep1)
+## get gene model
 trs <- geneModelFromTxdb(TxDb.Hsapiens.UCSC.hg19.knownGene, 
                          orgDb = org.Hs.eg.db, gr = gr.promoter)
 trs.names <- sapply(trs, function(.ele) .ele@name)
 trs <- trs[match(gene, trs.names)]
 names(trs) <- gene
+## modify the plot styles
 optSty <- optimizeStyle(trackList(syde, trs, heightDist=c(.9, .1)), 
                         theme="col")
 trackList <- optSty$tracks
@@ -841,8 +903,9 @@ for(i in 1:length(trackList))
 ***
 
 ```{r eval=TRUE, fig.width=12, fig.height=8}
-vp <- viewTracks(trackList, gr=gr.promoter, 
-                 viewerStyle=viewerStyle)
+## plot
+vp <- viewTracks(trackList, gr=gr.promoter, viewerStyle=viewerStyle)
+addGuideLine(guideLine = c(85666950, 85667700), vp = vp)
 ```
 
 ***
@@ -868,7 +931,7 @@ ex.scores <- sapply(ex.bg, function(.ele){
                ranges = ex.gr)
 })
 ## browse the tracks
-browseTracks(trackList(ex.scores, trs), gr=ex.gr)
+browseTracks(trackList(ex.scores, trs, heightDist = c(3/4, 1/4)), gr=ex.gr)
 ```
 </div>
 
@@ -1063,8 +1126,7 @@ library(BSgenome.Hsapiens.UCSC.hg19)
 YAP.TAZ.TEAD4.uniq <- unique(YAP.TAZ.TEAD4.nearest)
 YAP.TAZ.TEAD4.uniq <- YAP.TAZ.TEAD4.uniq[!is.na(YAP.TAZ.TEAD4.uniq$feature)]
 strand(YAP.TAZ.TEAD4.uniq) <- as.character(YAP.TAZ.TEAD4.uniq$feature_strand)
-seq <- getAllPeakSequence(YAP.TAZ.TEAD4.uniq, 
-                          upstream=0, downstream=0, 
+seq <- getAllPeakSequence(YAP.TAZ.TEAD4.uniq, upstream=0, downstream=0, 
                           genome=Hsapiens)
 freqs <- oligoFrequency(Hsapiens$chr1, MarkovOrder=3)
 os <- oligoSummary(seq, oligoLength=6, MarkovOrder=3, 
@@ -1093,6 +1155,29 @@ motifStack(pfms)
 ```
 
 ***
+
+<div class="practice">
+<h2>Exercise: Try to run oligoSummary by full dataset</h2>
+```{r}
+library(BSgenome.Hsapiens.UCSC.hg19)
+YAP.TAZ.TEAD4.uniq <- unique(YAP.TAZ.TEAD4.nearest)
+YAP.TAZ.TEAD4.uniq <- YAP.TAZ.TEAD4.uniq[!is.na(YAP.TAZ.TEAD4.uniq$feature)]
+strand(YAP.TAZ.TEAD4.uniq) <- as.character(YAP.TAZ.TEAD4.uniq$feature_strand)
+seq <- getAllPeakSequence(YAP.TAZ.TEAD4.uniq, upstream=0, downstream=0, genome=Hsapiens)
+freqs <- oligoFrequency(Hsapiens$chr1, MarkovOrder=3)
+os <- oligoSummary(seq, oligoLength=6, MarkovOrder=3, 
+                   quickMotif=TRUE, freqs=freqs, revcomp=TRUE) 
+zscore <- sort(os$zscore)
+h <- hist(zscore, breaks=100)
+text(zscore[length(zscore)], max(h$counts)/10, 
+     labels=names(zscore[length(zscore)]), adj=1)
+library(motifStack)
+pfms <- mapply(function(.ele, id)
+    new("pfm", mat=.ele, name=paste("SAMPLE motif", id)), 
+    os$motifs, 1:length(os$motifs))
+motifStack(pfms)
+```
+</div>
 
 The _oligoSummary_ is a quick tool to calculate the enriched k-mers in the peaks. To get accurate motifs, multiple softwares could be used, such as [the MEME Suite](http://meme-suite.org/doc/meme.html?man_type=web)(Bailey et al., 1994), [Consensus](http://stormo.wustl.edu/consensus/html/Html/main.html)(Hertz et al., 1990),  [rGADEM](https://www.bioconductor.org/packages/release/bioc/html/rGADEM.html), [Homer](http://homer.salk.edu/homer/), and et. al. 
 

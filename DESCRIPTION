@@ -28,6 +28,7 @@ Imports:
     csaw,
     ggplot2,
     TxDb.Hsapiens.UCSC.hg19.knownGene,
+    EnsDb.Hsapiens.v75,
     org.Hs.eg.db,
     reactome.db,
     BSgenome.Hsapiens.UCSC.hg19,

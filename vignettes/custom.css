@@ -53,7 +53,7 @@ section:first-child h1{
 }
 
 .reveal section .practice {
-    width: 95%;
+    width: 99%;
     margin-top: 10px;
     font-size: 24px;
     position: relative;
@@ -78,7 +78,12 @@ section:first-child h1{
     border-bottom: 1px solid #dcdbda;
 }
 .reveal section .practice p { 
-    padding-bottom: 25px; 
-    font-size: 1.1em; 
+    padding-bottom: 12px; 
+    font-size: 0.8em; 
+    color: #222;
+}
+.reveal section .practice ul li { 
+    padding-bottom: 12px; 
+    font-size: 0.8em; 
     color: #222;
 }
