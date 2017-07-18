@@ -114,7 +114,7 @@ Reads are first aligned to the genome using the **[Rsubread](http://bioconductor
 
 Peaks are called by **[MACS2](https://github.com/taoliu/MACS/)**. 
 
-The peaks were annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** , **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** packages, **[GeneNetworkBuilder](http://bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html)** packages.
+The peaks are annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** , **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** packages, **[GeneNetworkBuilder](http://bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html)** packages.
 
 The application of the methods will be demonstrated on a publicly available ChIP-seq data sets. The data set studies genome-wide association between YAP/TAZ/TEAD peaks at enhancers drives oncogenic growth ([Zanconato et al., 2015](http://www.nature.com/ncb/journal/v17/n9/abs/ncb3216.html)). The intention is to provide readers with a full usage example from which they can construct analysis of their own data.
 
@@ -287,7 +287,7 @@ null <- sapply(group, function(gp) {
    
 ***
 
-Potential PCR duplicates are removed by _removeDupReads_ function in **[Rsubread](http://bioconductor.org/packages/release/bioc/html/Rsubread.html)** package. This step can be also done by _MarkDuplicates_ tool from the [Picard software suite](http://broadinstitute.github.io/picard/). 
+Potential PCR duplicates are removed by _removeDupReads_ function in **[Rsubread](http://bioconductor.org/packages/release/bioc/html/Rsubread.html)** package. This step can also be done by _MarkDuplicates_ tool from the [Picard software suite](http://broadinstitute.github.io/picard/). 
 
 By _asBam_ function from **[Rsamtools](http://bioconductor.org/packages/release/bioc/html/Rsamtools.html)** package, the alignment is sorted by their mapping location, and an index created on the destination (with extension '.bai') when `indexDestination=TRUE`.
 
@@ -382,7 +382,7 @@ for(i in seq.int(nrow(pair))){
 
 ***
 
-After peak calling, the output of [MACS2](https://github.com/taoliu/MACS/) will be import into R by `ChIPpeakAnno::toGRanges` function. The top 10000 peaks sorted by pValue (FDR) will be used for IDR analysis. 
+After peak calling, the output of [MACS2](https://github.com/taoliu/MACS/) will be imported into R by `ChIPpeakAnno::toGRanges` function. The top 10000 peaks sorted by pValue (FDR) will be used for IDR analysis. 
 
 ```{r eval=FALSE, warning=FALSE}
 library(ChIPpeakAnno)
@@ -492,7 +492,7 @@ null <- mapply(function(.dat, .name)
 
 The ChIP-seq experiment could be checked by [ChIPQC](http://bioconductor.org/packages/release/bioc/html/ChIPQC.html) package. 
 
-Usally, before mapping, [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) could be used for sequence quality accessment. And after mapping, [SAMStat](http://samstat.sourceforge.net/) could be used for mapping quality analysis, and strand cross-correlation could be sued for checking the experiment quality via [csaw](http://bioconductor.org/packages/release/bioc/html/csaw.html) package. 
+Usally, before mapping, [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) could be used for sequence quality accessment. And after mapping, [SAMStat](http://samstat.sourceforge.net/) could be used for mapping quality analysis, and strand cross-correlation could be used for checking the experiment quality via [csaw](http://bioconductor.org/packages/release/bioc/html/csaw.html) package. 
 
 ```{r eval=FALSE}
 ## strand cross-correlation
@@ -600,7 +600,7 @@ samples
 
 ***
 
-We run ChIPQC for peaks before filter, filtered by IDR and filtered by qValue.
+We run ChIPQC for peaks before filter, filtered by IDR and qValue.
 
 ```{r eval=FALSE}
 ## before filter
@@ -629,7 +629,7 @@ ChIPQCreport(exampleExp.fil.q01,
 
 ![ChIPQC](figure/ChIP_QC.png)
 
-The effect of IDR with full dataset. The average profile across within peak regions of duplicates, and the correlation between samples as heatmap and by principal component analysis show higher quality of IDR filtered peaks for replicate samples because that they are clustered together in the heatmap and spatially grouped within the PCA plot.
+The effect of IDR with full dataset. The average profile across within peak regions of duplicates, and the correlation between samples as heatmap and by principal component analysis show higher quality of IDR filtered peaks for replicate samples because they are clustered together in the heatmap and spatially grouped within the PCA plot.
 
 
 ## Association among different sets of peaks
@@ -707,7 +707,7 @@ the annotation of ChIP-Seq peaks becomes streamlined into four major steps:
 ## Prepare annotation data
 
 Annotation data should be an object of **GRanges**. Same as import peaks, we use the method `toGRanges`, which can return an object of **GRanges**, to represent the annotation data. 
-An annotation data be constructed from not only BED, GFF or user defined readable text files, 
+Annotation data can be constructed from not only BED, GFF or user defined readable text files, 
 but also **EnsDb** or **TxDb** object, by calling the `toGRanges` method. 
 Please type `?toGRanges` for more information.
 
@@ -809,7 +809,7 @@ YAP.TAZ.TEAD4.promoter.anno <-
 
 ## Save annotation results
 
-The annotations could be saved in XLS file by **[WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)** package to avoid the gene name errors that be introduced inadvertently when using Excel (Zeeberg et al., 2004). 
+The annotations could be saved in XLS file by **[WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)** package to avoid the gene name errors might be introduced inadvertently when using Excel (Zeeberg et al., 2004). 
 
 ```{r eval=FALSE}
 ## save annotations
