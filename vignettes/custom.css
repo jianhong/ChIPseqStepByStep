@@ -20,8 +20,9 @@
     font-size: 0.8em;
 }
 
-.small-font {
+.level2 div.small-font {
     font-size: 0.6em;
+    text-align: left;
 }
 
 .reveal blockquote {
@@ -90,4 +91,9 @@ section:first-child h1{
     padding-bottom: 12px; 
     font-size: 0.8em; 
     color: #222;
+}
+
+.reveal pre {
+    margin-bottom: 12px;
+    margin-top: 12px;
 }
