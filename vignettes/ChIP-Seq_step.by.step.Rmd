@@ -59,6 +59,9 @@ opts_chunk$set(eval=FALSE, fig.width=8, fig.height=8, warning = FALSE, message =
 extdata <- system.file("extdata", package = "ChIPseqStepByStep")
 load(file.path(extdata, "minimal.rds"))
 ```
+<aside class="notes">
+		Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you open the speaker notes window (hit 's' on your keyboard).
+</aside>
 
 ## What is ChIP-seq
 
@@ -104,6 +107,7 @@ load(file.path(extdata, "minimal.rds"))
 * annotation and enrichment analysis: [ChIPpeakAnno](http://www.bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html), [ChIPseeker](http://www.bioconductor.org/packages/release/bioc/html/ChIPseeker.html), [clusterProfiler](http://www.bioconductor.org/packages/release/bioc/html/clusterProfiler.html), [GOstats](http://www.bioconductor.org/packages/release/bioc/html/GOstats.html)
 
 * downstream analysis: [GeneNetworkBuilder](http://www.bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html), [IGV](https://www.broadinstitute.org/igv/home), [UCSC genome browser](http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38), [rtracklayer](http://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html), [trackViewer](http://www.bioconductor.org/packages/release/bioc/html/trackViewer.html), [The MEME Suite](http://meme.nbcr.net/meme/index.html), [homer](http://homer.salk.edu/homer/motif/)
+
 </div>
 
 ## About the workflow
@@ -114,7 +118,7 @@ Reads are first aligned to the genome using the **[Rsubread](http://bioconductor
 
 Peaks are called by **[MACS2](https://github.com/taoliu/MACS/)**. 
 
-The peaks are annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** , **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** packages, **[GeneNetworkBuilder](http://bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html)** packages.
+The peaks are annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** , **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)**, and **[GeneNetworkBuilder](http://bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html)** packages.
 
 The application of the methods will be demonstrated on a publicly available ChIP-seq data sets. The data set studies genome-wide association between YAP/TAZ/TEAD peaks at enhancers drives oncogenic growth ([Zanconato et al., 2015](http://www.nature.com/ncb/journal/v17/n9/abs/ncb3216.html)). The intention is to provide readers with a full usage example from which they can construct analysis of their own data.
 
