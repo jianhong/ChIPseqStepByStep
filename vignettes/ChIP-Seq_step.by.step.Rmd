@@ -552,10 +552,10 @@ for(i in 1:length(scc)){
 
 ***
 
-```{r eval=TRUE, fig.width=6, fig.height=9, echo=FALSE}
-op <- par(mfrow=c(4, 2))
-for(i in 1:length(scc)){
-    plot(1:length(scc[[i]])-1, scc[[i]], 
+```{r eval=TRUE, fig.width=9, fig.height=6, echo=FALSE}
+op <- par(mfrow=c(2, 4))
+for(i in seq_along(scc)){
+    plot(seq_along(scc[[i]])-1, scc[[i]], 
          xlab="Delay (bp)", ylab="cross-correlation", 
          main=names(scc)[i], type="l", 
          ylim=c(scc[[i]][scc.param[[i]]["baseline"]]*.8, max(scc[[i]])*1.1))
@@ -599,7 +599,7 @@ samples <-
                              names(peaks)),
                Peaks=names(peaks),
                PeakCaller="narrow")
-samples
+samples[1:3, ]
 ```
 
 ***
@@ -633,7 +633,7 @@ ChIPQCreport(exampleExp.fil.q01,
 
 ![ChIPQC](figure/ChIP_QC.png)
 
-The effect of IDR with full dataset. The average profile across within peak regions of duplicates, and the correlation between samples as heatmap and by principal component analysis show higher quality of IDR filtered peaks for replicate samples because they are clustered together in the heatmap and spatially grouped within the PCA plot.
+<div class="small-font">The effect of IDR with full dataset. The average profile across within peak regions of duplicates, and the correlation between samples as heatmap and by principal component analysis show higher quality of IDR filtered peaks for replicate samples because they are clustered together in the heatmap and spatially grouped within the PCA plot.</div>
 
 
 ## Association among different sets of peaks
@@ -663,7 +663,7 @@ makeVennDiagram(ol)
 
 ***
 
-```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=5, fig.height=5}
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=4, fig.height=4}
 makeVennDiagram(ol)
 ```
 
@@ -840,7 +840,7 @@ over <- getEnrichedGO(YAP.TAZ.TEAD4.2side,
                       maxP=.01, condense=TRUE)
 ```
 ```{r eval=TRUE, message=FALSE, warning=FALSE}
-head(over[["bp"]][, -c(3, 10)])
+over[["bp"]][1:3, -c(3, 10)]
 dim(over[["bp"]])
 ```
 
@@ -857,7 +857,7 @@ path <- getEnrichedPATH(YAP.TAZ.TEAD4.2side,
                         maxP=.05)
 ```
 ```{r eval=TRUE, message=FALSE, warning=FALSE}
-head(path)
+path[1:2, ]
 ```
 
 ## Bidirectional promoters
@@ -1112,7 +1112,7 @@ sig <- featureAlignedSignal(cvglists, YAP.TAZ.TEAD.assigned.center,
 
 ***
 
-```{r eval=TRUE, message=FALSE, warning=FALSE}
+```{r eval=TRUE, message=FALSE, warning=FALSE, fig.width=5, fig.height=4.5}
 names(sig)
 
 heatmap <- featureAlignedHeatmap(sig, YAP.TAZ.TEAD.assigned.center, 
@@ -1276,7 +1276,7 @@ gR<-polishNetwork(cifNetwork)
 
 ***
 
-```{r eval=TRUE}
+```{r eval=TRUE, fig.width=5, fig.height=4}
 ## plot by Rgraphviz
 library(Rgraphviz)
 plotNetwork<-function(gR, layouttype="dot", ...){
@@ -1299,11 +1299,9 @@ browseNetwork(gR)
 
 ## Software availability
 
-This workflow depends on various packages from version 3.5 of the Bioconductor project, running on R version 3.4.1 or higher. Version numbers for all packages used are shown below.
-
+<div class="small-font">This workflow depends on various packages from version 3.5 of the Bioconductor project, running on R version 3.4.1 or higher. Version numbers for all packages used are shown below.</div>
 ```{r eval=TRUE}
 sessionInfo()
 ```
-
-The command-line tools used in the workflow including SRA Toolkit (version 2.3.4), MACS2 (version 2.1.0) and Bedtools (version 2.25.0) must be installed on the system.
+<div class="small-font">The command-line tools used in the workflow including SRA Toolkit (version 2.3.4), MACS2 (version 2.1.0) and Bedtools (version 2.25.0) must be installed on the system.</div>
 
