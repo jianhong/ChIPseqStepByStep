@@ -1,0 +1,7 @@
+<script type="text/javascript">
+$(function(){
+    $("code").each(function(index, element){
+        $(this).html($(this).html().replace(/(\#\#.*)/g, "<span class='co'>$1</span>"));
+    });
+});
+</script>

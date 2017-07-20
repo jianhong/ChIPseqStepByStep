@@ -13,6 +13,8 @@ output:
         self_contained: true
         backgroundTransition: zoom
         css: ["styles.css", "custom.css"]
+        includes:
+            after_body: doc_suffix.html
 ---
 ## Prerequisites
 - R(>= 3.4)/Bioconductor(>= 3.5)
@@ -347,9 +349,9 @@ library(TxDb.Hsapiens.UCSC.hg19.knownGene)
 pair <- data.frame(treat=c("YAP", "TAZ", "TEAD4", "JUN"),
                    control=c("1.2", "1.2", "3.4", "3.5"),
                    stringsAsFactors = FALSE)
-# use chromosome 1 to save the time.
+## use chromosome 1 to save the time.
 chr1 <- as(seqinfo(TxDb.Hsapiens.UCSC.hg19.knownGene)["chr1"], "GRanges")
-# check the difference between TEAD4 ChIP and background signal
+## check the difference between TEAD4 ChIP and background signal
 i <- 3 
 cumulativePercentage(
         bamfiles = c(paste0(pair[i, "treat"], 
@@ -362,6 +364,9 @@ cumulativePercentage(
 ***
 
 See documentation from [deeptools](http://deeptools.readthedocs.io/en/latest/content/tools/plotFingerprint.html)
+
+
+
 ![deeptools](figure/QC_fingerprint.png)
 
 ***
@@ -729,7 +734,7 @@ annoData[1]
 <h2>Exercise: Prepare annotation data from Ensembl/UCSC based annotation package</h2>
 
 - Ensembl Archives: http://www.ensembl.org/info/website/archives/index.html
-- UCSC' release numbers: https://genome.ucsc.edu/FAQ/FAQreleases.html
+- UCSC release numbers: https://genome.ucsc.edu/FAQ/FAQreleases.html
 
 ```{r}
 library(EnsDb.Hsapiens.v75)
@@ -813,7 +818,7 @@ YAP.TAZ.TEAD4.promoter.anno <-
 
 ## Save annotation results
 
-The annotations could be saved in XLS file by **[WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)** package to avoid the gene name errors might be introduced inadvertently when using Excel (Zeeberg et al., 2004). 
+The annotations could be saved in XLS file by **[WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)** package to avoid the gene name errors might be introduced inadvertently when using Excel ([Zeeberg et al., 2004](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-5-80)). 
 
 ```{r eval=FALSE}
 ## save annotations
@@ -941,7 +946,7 @@ browseTracks(trackList(ex.scores, trs, heightDist = c(3/4, 1/4)), gr=ex.gr)
 
 ## Check distribution of peaks
 
-The distribution of peaks over exon, intron, enhancer, proximal promoter, 5'UTR and 3'UTR could give you some clues how to annotate the peaks. The distribution can be summarized in the peak centric or nucleotide centric view using the function _assignChromosomeRegion_ in [ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html) package.
+The distribution of peaks over exon, intron, enhancer, proximal promoter, 5'UTR and 3'UTR could give you some clues of how to annotate the peaks. The distribution can be summarized in the peak centric or nucleotide centric view using the function _assignChromosomeRegion_ in [ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html) package.
 
 ```{r eval=FALSE}
 seqlevelsStyle(overlaps) ## == UCSC
@@ -998,7 +1003,7 @@ ggplot(dist2TSS.percentage, aes(x=Var2, y=value, fill=Var1)) +
 
 ***
 
-Because over 70% of the peaks are far from known TSS (more than 10Kb), we want to confirm the peaks are bind to active enhancer region. The ChIP-seq data of epigenetic marks of same cell line are availble in GSE49651. 
+Because over 70% of the peaks are far from known TSS (more than 10Kb), we want to confirm the peaks  could be linked to active enhancer region. The ChIP-seq data of epigenetic marks of same cell line are availble in GSE49651. 
 
 We use **[GEOquery](https://www.bioconductor.org/packages/release/bioc/html/GEOquery.html)** package to download data from GEO. We can also download the data by **[SRAdb](http://bioconductor.org/packages/release/bioc/html/SRAdb.html)** package and call peaks from raw reads. Here, we use the peaks saved in the GSE49651.
 
@@ -1016,7 +1021,7 @@ names(epipeaks) <-
 
 ***
 
-The presence of H3K4me1 and H3K4me3 peaks, their genomic locations and their overlap can be used as the criteria to define promoters and enhancers. H3K4me3 peaks not overlapping with H3K4me1 peaks and cloase to a TSS (5kb) are defined as promoters, as NA otherwise; H3K4me1 peaks not overlapping with H3K4me3 peaks are defined as enhancers. Promoters or enhancers are defined as active if overlapping with H3K27ac peaks.
+The presence of H3K4me1 and H3K4me3 peaks, their genomic locations and their overlap can be used as the criteria to define promoters and enhancers. H3K4me3 peaks not overlapping with H3K4me1 peaks and close to a TSS (5kb) are defined as promoters, as NA otherwise; H3K4me1 peaks not overlapping with H3K4me3 peaks are defined as enhancers. Promoters or enhancers are defined as active if overlapping with H3K27ac peaks.
 
 ![histoneModification](figure/histModify.png)
 <div class="citation">(Modified from [Nature Cell Biology, doi:10.1038/ncb3216, F. Zanconato](https://www.nature.com/ncb/journal/v17/n9/full/ncb3216.html))</div>
@@ -1058,7 +1063,7 @@ pie1(tbl)
 
 ***
 
-The binding pattern could be visualized and compared by heatmap and distribution curve from the binding ranges of overlapping peaks of target TFs. For big bedgraph files, [bedtools](http://bedtools.readthedocs.org/en/latest/) are used to decrease the file size before import into R.
+The binding pattern could be visualized and compared by heatmap and distribution curve from the binding ranges of overlapping peaks of target TFs. For big bedgraph files, [bedtools](http://bedtools.readthedocs.org/en/latest/) are used to decrease the file size before importing into R.
 
 ```{r eval=FALSE}
 ##heatmap
@@ -1305,3 +1310,6 @@ sessionInfo()
 ```
 <div class="small-font">The command-line tools used in the workflow including SRA Toolkit (version 2.3.4), MACS2 (version 2.1.0) and Bedtools (version 2.25.0) must be installed on the system.</div>
 
+## Acknowledgements
+
+We would like to thank the support from the [Department of Molecular, Cell and Cancer Biology (MCCB) at UMass Medical School (UMMS)](http://umassmed.edu/mccb). We thank the early adopters who provided great ideas and feedbacks to enhance the features of the software.
