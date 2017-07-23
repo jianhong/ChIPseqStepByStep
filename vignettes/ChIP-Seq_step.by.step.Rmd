@@ -112,7 +112,7 @@ load(file.path(extdata, "minimal.rds"))
 
 </div>
 
-## About the workflow
+## Summary of the workflow
 
 The workflow is based primarily on software packages from the open-source [Bioconductor project](http://bioconductor.org/). It contains all steps that are necessary for detecting peaks, starting from the raw read sequences. 
 
@@ -122,7 +122,7 @@ Peaks are called by **[MACS2](https://github.com/taoliu/MACS/)**.
 
 The peaks are annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** , **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)**, and **[GeneNetworkBuilder](http://bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html)** packages.
 
-The application of the methods will be demonstrated on a publicly available ChIP-seq data sets. The data set studies genome-wide association between YAP/TAZ/TEAD peaks at enhancers drives oncogenic growth ([Zanconato et al., 2015](http://www.nature.com/ncb/journal/v17/n9/abs/ncb3216.html)). The intention is to provide readers with a full usage example from which they can construct analysis of their own data.
+We will demonstrate the workflow on a publicly available ChIP-seq dataset to profile YAP/TAZ/TEAD binding sites ([Zanconato et al., 2015](http://www.nature.com/ncb/journal/v17/n9/abs/ncb3216.html)).
 
 ## Download data from Gene Expression Omnibus
 
@@ -715,9 +715,9 @@ the annotation of ChIP-Seq peaks becomes streamlined into four major steps:
 
 ## Prepare annotation data
 
-Annotation data should be an object of **GRanges**. Same as import peaks, we use the method `toGRanges`, which can return an object of **GRanges**, to represent the annotation data. 
-Annotation data can be constructed from not only BED, GFF or user defined readable text files, 
-but also **EnsDb** or **TxDb** object, by calling the `toGRanges` method. 
+The method `toGRanges` can be used to construct **GRanges** object from various 
+annotation format such as BED, GFF, user defined readable text files, 
+**EnsDb** or **TxDb** object.  
 Please type `?toGRanges` for more information.
 
 ```{r eval=FALSE}
@@ -818,7 +818,7 @@ YAP.TAZ.TEAD4.promoter.anno <-
 
 ## Save annotation results
 
-The annotations could be saved in XLS file by **[WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)** package to avoid the gene name errors might be introduced inadvertently when using Excel ([Zeeberg et al., 2004](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-5-80)). 
+The annotation results can be saved in XLS file format using **[WriteXLS](https://cran.r-project.org/web/packages/WriteXLS/index.html)** package to avoid the gene name errors that can be inadvertently introduced when opened by Excel ([Zeeberg et al., 2004](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-5-80)). 
 
 ```{r eval=FALSE}
 ## save annotations
@@ -833,7 +833,7 @@ WriteXLS("YAP.TAZ.TEAD4.2side.m",
 
 ## Enrichment analysis
 
-With the annotated peak data, you can call the function `getEnrichedGO` to obtain a list of enriched GO terms. Please note that the default setting of `feature_id_type` is "ensembl\_gene\_id". If you are using _TxDb_ as annotation data, please try to change it to "entrez\_id".
+With the annotated peak data, you can call the function `getEnrichedGO` to obtain a list of enriched GO terms. Please note that the default setting of `feature_id_type` is "ensembl\_gene\_id". If you are using _TxDb_ as annotation data, you need to change it to "entrez\_id".
 
 
 ```{r eval=FALSE}
