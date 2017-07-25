@@ -16,19 +16,12 @@ output:
         includes:
             after_body: doc_suffix.html
 ---
-## Prerequisites
-- R(>= 3.4)/Bioconductor(>= 3.5)
-- Packages
+## ChIPseq technology
 
-     |      |       
-------------------------------|---------------------------|-----------------------
-[ChIPpeakAnno](http://www.bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html) | [SRAdb](http://www.bioconductor.org/packages/release/bioc/html/SRAdb.html) | [Rsubread](http://www.bioconductor.org/packages/release/bioc/html/Rsubread.html)
-[GeneNetworkBuilder](http://www.bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html) | [GEOquery](https://www.bioconductor.org/packages/release/bioc/html/GEOquery.html) | [Rsamtools](http://www.bioconductor.org/packages/release/bioc/html/Rsamtools.html)
-[trackViewer](http://www.bioconductor.org/packages/release/bioc/html/trackViewer.html) | [rtracklayer](http://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) | [GenomicAlignments](http://www.bioconductor.org/packages/release/bioc/html/GenomicAlignments.html)
-[motifStack](http://www.bioconductor.org/packages/release/bioc/html/motifStack.html) | [ChIPQC](http://www.bioconductor.org/packages/release/bioc/html/ChIPQC.html) | [csaw](http://www.bioconductor.org/packages/release/bioc/html/csaw.html)
-[BSgenome.Hsapiens.UCSC.hg19](http://www.bioconductor.org/packages/release/bioc/html/BSgenome.Hsapiens.UCSC.hg19.html) | [org.Hs.eg.db](http://www.bioconductor.org/packages/release/bioc/html/org.Hs.eg.db.html) | [reactome.db](http://www.bioconductor.org/packages/release/bioc/html/reactome.db.html)
-[TxDb.Hsapiens.UCSC.hg19.knownGene](http://www.bioconductor.org/packages/release/bioc/html/TxDb.Hsapiens.UCSC.hg19.knownGene.html) |  [EnsDb.Hsapiens.v75](https://bioconductor.org/packages/release/data/annotation/html/EnsDb.Hsapiens.v75.html) |
-
+> Chromatin immunoprecipitation followed by sequencing (ChIP-seq) is a 
+> technique for genome-wide profiling of DNA-binding proteins, histone 
+> modifications or nucleosomes.
+>  <span align="right" width="300px" style="display:inline-block;"> -- [*Peter J. Park*](http://www.nature.com/nrg/journal/v10/n10/full/nrg2641.html) </span>
 ```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 suppressPackageStartupMessages({
     library(SRAdb)
@@ -61,22 +54,6 @@ opts_chunk$set(eval=FALSE, fig.width=8, fig.height=8, warning = FALSE, message =
 extdata <- system.file("extdata", package = "ChIPseqStepByStep")
 load(file.path(extdata, "minimal.rds"))
 ```
-<aside class="notes">
-		Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you open the speaker notes window (hit 's' on your keyboard).
-</aside>
-
-## What is ChIP-seq
-
-> Chromatin immunoprecipitation followed by sequencing (ChIP-seq) is a 
-> technique for genome-wide profiling of DNA-binding proteins, histone 
-> modifications or nucleosomes.
->  <span align="right" width="300px" style="display:inline-block;"> -- [*Peter J. Park*](http://www.nature.com/nrg/journal/v10/n10/full/nrg2641.html) </span>
-
-![ChIP-seq method](figure/major.methods.detect.functional.elements.png)
-
-<div class="citation">(Modified from [PLoS Biol 9-e1001046,2001 M.Pazin](http://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.1001046))</div>
-
-## ChIP-seq experiment workflow
 
 ![ChIP-seq workflow](figure/ChIPseq.workflow.png)
 
@@ -88,27 +65,24 @@ load(file.path(extdata, "minimal.rds"))
 
 <div class="citation">(Modified from [Nature Methods doi:10.1038/nmeth.1371, S.Pepke](http://www.nature.com/nmeth/journal/v6/n11s/abs/nmeth.1371.html))</div>
 
-## ChIP-seq data analysis workflow
-<div class="left">
-![workflow](figure/workflow.png)
-</div>
+## Workflow of ChIPseq Analysis
 
-<div class="right">
-* Quality Control: [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/), [ChIPQC](http://www.bioconductor.org/packages/release/bioc/html/ChIPQC.html)
+* Quality Assessment of sequencing: [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 
-* mapping: [bowtie1/2](http://bowtie-bio.sourceforge.net/index.shtml), [Rsubread](http://bioconductor.org/packages/release/bioc/html/Rsubread.html)
+* Mapping: [bowtie1/2](http://bowtie-bio.sourceforge.net/index.shtml), [Rsubread](http://bioconductor.org/packages/release/bioc/html/Rsubread.html)
 
-* peak calling: <span class="citation">(Modified from [Nature Immunology doi:10.1038/ni.2117, B.Kidder](http://www.nature.com/ni/journal/v12/n10/full/ni.2117.html))</span>
+* Peak calling: [CCAT](http://cmb.gis.a-star.edu.sg/ChIPSeq/paperCCAT.htm), [SICER](http://home.gwu.edu/~wpeng/Software.htm), [MACS](http://liulab.dfci.harvard.edu/MACS/), [ZINBA](https://code.google.com/p/zinba/), [BayesPeak](http://bioconductor.org/packages/release/bioc/html/BayesPeak.html), [chipseq](http://bioconductor.org/packages/release/bioc/html/chipseq.html), [ChIPseqR](http://bioconductor.org/packages/release/bioc/html/ChIPseqR.html), [CSAR](http://bioconductor.org/packages/release/bioc/html/CSAR.html), [csaw](http://bioconductor.org/packages/release/bioc/html/csaw.html), [GenoGAM](http://bioconductor.org/packages/release/bioc/html/GenoGAM.html), [iSeq](http://bioconductor.org/packages/release/bioc/html/iSeq.html), [PICS](http://bioconductor.org/packages/release/bioc/html/PICS.html)
 
-|   | Type of peak | Example | Representative tools |
-|---|--------------|---------|----------------------|
-|![](figure/peakTypeI.jpg) | broad | H3K27me3 | [CCAT](http://cmb.gis.a-star.edu.sg/ChIPSeq/paperCCAT.htm), [SICER](http://home.gwu.edu/~wpeng/Software.htm) |
-|![](figure/peakTypeII.jpg) | Sharp | CTCF | [MACS](http://liulab.dfci.harvard.edu/MACS/) |
-|![](figure/peakTypeIII.jpg) | Sharp & broad | Pol II | [ZINBA](https://code.google.com/p/zinba/) |
+* Quality assessment: [ChIPQC](http://www.bioconductor.org/packages/release/bioc/html/ChIPQC.html)
 
-* annotation and enrichment analysis: [ChIPpeakAnno](http://www.bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html), [ChIPseeker](http://www.bioconductor.org/packages/release/bioc/html/ChIPseeker.html), [clusterProfiler](http://www.bioconductor.org/packages/release/bioc/html/clusterProfiler.html), [GOstats](http://www.bioconductor.org/packages/release/bioc/html/GOstats.html)
+<div style="border:1px solid black">
+* Peak annotation and pathway analysis: **[ChIPpeakAnno](http://www.bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)**, [Homer](http://homer.ucsd.edu/homer/ngs/index.html), [PAVIS](https://manticore.niehs.nih.gov/pavis2/), [GREAT](http://bejerano.stanford.edu/great/public/html/), [ChIPseeker](http://www.bioconductor.org/packages/release/bioc/html/ChIPseeker.html), [clusterProfiler](http://www.bioconductor.org/packages/release/bioc/html/clusterProfiler.html), [GOstats](http://www.bioconductor.org/packages/release/bioc/html/GOstats.html)
 
-* downstream analysis: [GeneNetworkBuilder](http://www.bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html), [IGV](https://www.broadinstitute.org/igv/home), [UCSC genome browser](http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38), [rtracklayer](http://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html), [trackViewer](http://www.bioconductor.org/packages/release/bioc/html/trackViewer.html), [The MEME Suite](http://meme.nbcr.net/meme/index.html), [homer](http://homer.salk.edu/homer/motif/)
+* Gene Network Building: **[GeneNetworkBuilder](http://www.bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html)**, [ChIPXpress](http://www.bioconductor.org/packages/release/bioc/html/ChIPXpress.html)
+
+* Visualization: **[trackViewer](http://www.bioconductor.org/packages/release/bioc/html/trackViewer.html)**, [IGV](https://www.broadinstitute.org/igv/home), [UCSC genome browser](http://genome.ucsc.edu/cgi-bin/hgTracks?db=hg38), [rtracklayer](http://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) 
+
+* Motif enrichment analysis: [The MEME Suite](http://meme.nbcr.net/meme/index.html), [homer](http://homer.salk.edu/homer/motif/)
 
 </div>
 
@@ -123,6 +97,38 @@ Peaks are called by **[MACS2](https://github.com/taoliu/MACS/)**.
 The peaks are annotated and virualized by **[ChIPpeakAnno](http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html)** , **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)**, and **[GeneNetworkBuilder](http://bioconductor.org/packages/release/bioc/html/GeneNetworkBuilder.html)** packages.
 
 We will demonstrate the workflow on a publicly available ChIP-seq dataset to profile YAP/TAZ/TEAD binding sites ([Zanconato et al., 2015](http://www.nature.com/ncb/journal/v17/n9/abs/ncb3216.html)).
+
+## ChIPpeakAnno
+
+Main functions:
+
+1. Compare and combine biological replicates (`IDRfilter`, `findOverlapsOfPeaks`, `peakPermTest`)
+
+2. Annotate to nearest gene (`annotatePeakInBatch`)
+
+3. Pathway Analysis (`getEnrichedGO`, `getEnrichedPath`)
+
+4. Separate binding sites into active enhancer regions and promoter regions using histone modification data
+
+5. Visualize the signal pattern for genomic loci bound by multiple transcription factors
+
+## [GeneNetworkBuilder](https://bioconductor.org/packages/release/bioc/vignettes/GeneNetworkBuilder/inst/doc/GeneNetworkBuilder_vignettes.html)
+
+1. Build regulatory network (`buildNetwork`)
+
+2. Filter regulatory network (`filterNetwork`)
+
+3. Polish regulatory network (`polishNetwork`)
+
+## [trackViewer](https://bioconductor.org/packages/release/bioc/vignettes/trackViewer/inst/doc/trackViewer.html)
+
+1. Import data (`importScore`)
+
+2. Build gene model (`geneModelFromTxdb`)
+
+3. View the tracks (`viewTracks`, `browseTracks`)
+=======
+>>>>>>> d65ad2b91ffda1079247856c2f97a61302a62f2e
 
 ## Download data from Gene Expression Omnibus
 
@@ -425,7 +431,7 @@ peaks <- lapply(peaks, function(.ele) .ele[order(.ele$pValue, decreasing=TRUE)])
 
 ***
 
-There are lots of noise peaks when we set loose filter condition for [MACS2](https://github.com/taoliu/MACS/). We will use IDR framework to filter the low reproducible peaks. Only overlapping peaks will be used for IDR calculation.
+There are lots of noise peaks when we set loose filter condition for [MACS2](https://github.com/taoliu/MACS/). We will use IDR framework to filter the low reproducible peaks ([Landt et al., 2012](http://genome.cshlp.org/content/22/9/1813.short)). Only overlapping peaks will be used for [IDR](https://sites.google.com/site/anshulkundaje/projects/idr) calculation.
 
 ```{r eval=TRUE}
 peaks <- lapply(peaks, function(.ele) .ele[1:min(1e5, length(.ele))])
@@ -532,7 +538,7 @@ scc.param <- lapply(scc, function(.ele){
 
 ***
 
-The normalized strand coefficient (NSC) and relative strand correlation (RSC) are strong metrics for assessing signal-to-noise ratios in a ChIP-seq experiment. High-quality ChIP-seq data sets should have NSC values >= 1.05 and RSC values >= 0.8 (Landt et al., 2012). 
+The [normalized strand coefficient (NSC) and relative strand correlation (RSC)](https://genome.ucsc.edu/ENCODE/qualityMetrics.html) are strong metrics for assessing signal-to-noise ratios in a ChIP-seq experiment. High-quality ChIP-seq data sets should have NSC values >= 1.05 and RSC values >= 0.8 ([Landt et al., 2012](http://genome.cshlp.org/content/22/9/1813.short)). 
 
 ```{r eval=TRUE}
 do.call(rbind, scc.param)[, c("NSC", "RSC")]
@@ -875,74 +881,6 @@ bdp <- peaksNearBDP(overlaps, annoData, MaxDistance=100000)
 ```{r eval=TRUE, message=FALSE, warning=FALSE}
 bdp
 ```
-
-## View tracks by `trackViewer`
-
-The peaks could be visualized by **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** package.
-
-```{r eval=FALSE}
-library(trackViewer)
-## prepare ranges to view
-gene <- "SYDE2"
-eID <- mget(gene, org.Hs.egSYMBOL2EG)
-gr <- as(annoData[eID[[1]]], "GRanges")
-gr.promoter <- promoters(gr, upstream=5000, downstream=2000)
-seqlevels(gr.promoter) <- "chr1"
-seqinfo(gr.promoter) <- seqinfo(gr.promoter)["chr1"]
-## import data
-bams.rep1 <- sub(".bam", ".rmdup.bam", 
-                 bam.files[grepl("rep1", bam.files)])
-syde <- lapply(bams.rep1, importBam, ranges=gr.promoter)
-names(syde) <- gsub("_rep1.rmdup.bam", "", bams.rep1)
-## get gene model
-trs <- geneModelFromTxdb(TxDb.Hsapiens.UCSC.hg19.knownGene, 
-                         orgDb = org.Hs.eg.db, gr = gr.promoter)
-trs.names <- sapply(trs, function(.ele) .ele@name)
-trs <- trs[match(gene, trs.names)]
-names(trs) <- gene
-## modify the plot styles
-optSty <- optimizeStyle(trackList(syde, trs, heightDist=c(.9, .1)), 
-                        theme="col")
-trackList <- optSty$tracks
-viewerStyle <- optSty$style
-for(i in 1:length(trackList)) 
-    setTrackStyleParam(trackList[[i]], "ylabgp", list(cex=.8))
-```
-
-***
-
-```{r eval=TRUE, fig.width=12, fig.height=8}
-## plot
-vp <- viewTracks(trackList, gr=gr.promoter, viewerStyle=viewerStyle)
-addGuideLine(guideLine = c(85666950, 85667700), vp = vp)
-```
-
-***
-Too complicated? Try `browseTracks`
-
-<div class="practice">
-<h2>Exercise: browseTracks</h2>
-```{r}
-library(trackViewer)
-library(org.Hs.eg.db)
-library(TxDb.Hsapiens.UCSC.hg19.knownGene)
-library(ChIPseqStepByStep)
-(ex.gr <- parse2GRanges("chr1:85664729-85671728:-"))
-## get gene model
-trs <- geneModelFromTxdb(TxDb.Hsapiens.UCSC.hg19.knownGene, 
-                         orgDb = org.Hs.eg.db, gr = ex.gr)
-## import signals
-packagePath <- system.file("extdata", "bedGraph", package = "ChIPseqStepByStep")
-(ex.bg <- dir(packagePath, "bedGraph"))
-ex.scores <- sapply(ex.bg, function(.ele){
-    importScore(file.path(packagePath, .ele), 
-               format = "bedGraph", 
-               ranges = ex.gr)
-})
-## browse the tracks
-browseTracks(trackList(ex.scores, trs, heightDist = c(3/4, 1/4)), gr=ex.gr)
-```
-</div>
 
 ## Check distribution of peaks
 
@@ -1301,6 +1239,74 @@ plotNetwork(gR)
 ```{r eval=TRUE}
 browseNetwork(gR)
 ```
+
+## View tracks by `trackViewer`
+
+The peaks could be visualized by **[trackViewer](http://bioconductor.org/packages/release/bioc/html/trackViewer.html)** package.
+
+```{r eval=FALSE}
+library(trackViewer)
+## prepare ranges to view
+gene <- "SYDE2"
+eID <- mget(gene, org.Hs.egSYMBOL2EG)
+gr <- as(annoData[eID[[1]]], "GRanges")
+gr.promoter <- promoters(gr, upstream=5000, downstream=2000)
+seqlevels(gr.promoter) <- "chr1"
+seqinfo(gr.promoter) <- seqinfo(gr.promoter)["chr1"]
+## import data
+bams.rep1 <- sub(".bam", ".rmdup.bam", 
+                 bam.files[grepl("rep1", bam.files)])
+syde <- lapply(bams.rep1, importBam, ranges=gr.promoter)
+names(syde) <- gsub("_rep1.rmdup.bam", "", bams.rep1)
+## get gene model
+trs <- geneModelFromTxdb(TxDb.Hsapiens.UCSC.hg19.knownGene, 
+                         orgDb = org.Hs.eg.db, gr = gr.promoter)
+trs.names <- sapply(trs, function(.ele) .ele@name)
+trs <- trs[match(gene, trs.names)]
+names(trs) <- gene
+## modify the plot styles
+optSty <- optimizeStyle(trackList(syde, trs, heightDist=c(.9, .1)), 
+                        theme="col")
+trackList <- optSty$tracks
+viewerStyle <- optSty$style
+for(i in 1:length(trackList)) 
+    setTrackStyleParam(trackList[[i]], "ylabgp", list(cex=.8))
+```
+
+***
+
+```{r eval=TRUE, fig.width=12, fig.height=8}
+## plot
+vp <- viewTracks(trackList, gr=gr.promoter, viewerStyle=viewerStyle)
+addGuideLine(guideLine = c(85666950, 85667700), vp = vp)
+```
+
+***
+Too complicated? Try `browseTracks`
+
+<div class="practice">
+<h2>Exercise: browseTracks</h2>
+```{r}
+library(trackViewer)
+library(org.Hs.eg.db)
+library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+library(ChIPseqStepByStep)
+(ex.gr <- parse2GRanges("chr1:85664729-85671728:-"))
+## get gene model
+trs <- geneModelFromTxdb(TxDb.Hsapiens.UCSC.hg19.knownGene, 
+                         orgDb = org.Hs.eg.db, gr = ex.gr)
+## import signals
+packagePath <- system.file("extdata", "bedGraph", package = "ChIPseqStepByStep")
+(ex.bg <- dir(packagePath, "bedGraph"))
+ex.scores <- sapply(ex.bg, function(.ele){
+    importScore(file.path(packagePath, .ele), 
+               format = "bedGraph", 
+               ranges = ex.gr)
+})
+## browse the tracks
+browseTracks(trackList(ex.scores, trs, heightDist = c(3/4, 1/4)), gr=ex.gr)
+```
+</div>
 
 ## Software availability
 

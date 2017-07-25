@@ -1,7 +1,7 @@
 Package: ChIPseqStepByStep
 Type: Package
 Title: Integrated analysis and visualization of ChIP-seq data using ChIPpeakAnno, GeneNetworkBuilder and TrackViewer
-Version: 0.99.0
+Version: 0.99.1
 Author: Jianhong Ou, Jun Yu, Lihua Julie Zhu
 Maintainer: Jianhong Ou <jianhong.ou@gmail.com>
 Description: Chromatin immuno-precipitation followed by DNA sequencing (ChIP-seq) 
