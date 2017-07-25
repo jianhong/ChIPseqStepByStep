@@ -127,8 +127,7 @@ Main functions:
 2. Build gene model (`geneModelFromTxdb`)
 
 3. View the tracks (`viewTracks`, `browseTracks`)
-=======
->>>>>>> d65ad2b91ffda1079247856c2f97a61302a62f2e
+
 
 ## Download data from Gene Expression Omnibus
 
