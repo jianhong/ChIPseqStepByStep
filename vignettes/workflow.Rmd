@@ -19,27 +19,14 @@ output:
 
 ```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 suppressPackageStartupMessages({
-    library(SRAdb)
-    library(reshape2)
-    library(Rsubread)
-    library(Rsamtools)
+    library(grid)
     library(ChIPpeakAnno)
     library(GeneNetworkBuilder)
-    library(rtracklayer)
-    library(GenomicAlignments)
-    library(idr)
     library(ChIPQC)
-    library(csaw)
     library(ggplot2)
-    library(TxDb.Hsapiens.UCSC.hg19.knownGene)
-    library(org.Hs.eg.db)
-    library(reactome.db)
-    library(BSgenome.Hsapiens.UCSC.hg19)
     library(motifStack)
     library(knitr)
     library(trackViewer)
-    library(png)
-    library(grid)
 })
 opts_chunk$set(eval=FALSE, fig.width=6, fig.height=6)
 ```
@@ -893,6 +880,7 @@ plotNetwork(gR)
 ```
 
 ```{r, eval=TRUE}
+library(GeneNetworkBuilder)
 browseNetwork(gR)
 ```
 

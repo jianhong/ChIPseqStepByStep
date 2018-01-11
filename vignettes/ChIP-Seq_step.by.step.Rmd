@@ -22,32 +22,19 @@ output:
 > technique for genome-wide profiling of DNA-binding proteins, histone 
 > modifications or nucleosomes.
 >  <span align="right" width="300px" style="display:inline-block;"> -- [*Peter J. Park*](http://www.nature.com/nrg/journal/v10/n10/full/nrg2641.html) </span>
+
 ```{r echo=FALSE, results="hide", warning=FALSE, message=FALSE}
 suppressPackageStartupMessages({
-    library(SRAdb)
-    library(reshape2)
-    library(Rsubread)
-    library(Rsamtools)
+    library(grid)
     library(ChIPpeakAnno)
     library(GeneNetworkBuilder)
     library(rtracklayer)
-    library(GenomicAlignments)
-    library(idr)
     library(ChIPQC)
-    library(csaw)
     library(ggplot2)
-    library(TxDb.Hsapiens.UCSC.hg19.knownGene)
     library(org.Hs.eg.db)
-    library(reactome.db)
-    library(BSgenome.Hsapiens.UCSC.hg19)
     library(motifStack)
     library(knitr)
     library(trackViewer)
-    library(png)
-    library(grid)
-    library(limma)
-    library(simpIntLists)
-    library(plotly)
     library(Rgraphviz)
 })
 opts_chunk$set(eval=FALSE, fig.width=8, fig.height=8, warning = FALSE, message = FALSE)
@@ -1236,6 +1223,7 @@ plotNetwork(gR)
 
 ***
 ```{r eval=TRUE}
+library(GeneNetworkBuilder)
 browseNetwork(gR)
 ```
 
